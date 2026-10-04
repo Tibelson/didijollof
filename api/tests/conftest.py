@@ -9,9 +9,11 @@ The database is rebuilt per test so ordering can never matter.
 
 from __future__ import annotations
 
+import hashlib
 import os
 import pathlib
 import sys
+import urllib.parse
 
 import asyncpg
 import pytest
@@ -23,9 +25,41 @@ sys.path.insert(0, str(SRC))
 
 MIGRATIONS = pathlib.Path(__file__).resolve().parents[2] / "migrations"
 
-TEST_DATABASE_URL = os.environ.setdefault(
-    "DATABASE_URL", "postgresql://didi:didi@localhost:55432/didi"
-)
+def _test_database_url() -> str:
+    """Resolve the test database, and refuse to destroy anything that isn't one.
+
+    `fresh_database` runs DROP SCHEMA public CASCADE before every test. That is
+    fine against a throwaway container and catastrophic against anything else.
+
+    Two protections, learned the hard way after this suite was pointed at the
+    production Neon database by an ambient DATABASE_URL and wiped it:
+
+    1. It reads DIDI_TEST_DATABASE_URL, not DATABASE_URL. A shell that has
+       sourced .env.local for some unrelated task can no longer silently
+       redirect the tests at production.
+    2. The host must look local. Anything else aborts the run unless
+       DIDI_ALLOW_DESTRUCTIVE_TESTS=1 is set deliberately.
+    """
+    url = os.environ.get(
+        "DIDI_TEST_DATABASE_URL", "postgresql://didi:didi@localhost:55432/didi"
+    )
+    host = (urllib.parse.urlparse(url).hostname or "").lower()
+    local = {"localhost", "127.0.0.1", "::1", "db", "postgres"}
+    if host not in local and os.environ.get("DIDI_ALLOW_DESTRUCTIVE_TESTS") != "1":
+        raise SystemExit(
+            f"\nREFUSING TO RUN: the test database host is {host!r}, which is not local.\n"
+            f"These tests DROP SCHEMA before every test and would destroy it.\n\n"
+            f"Use a disposable database (make db-up), or set\n"
+            f"DIDI_ALLOW_DESTRUCTIVE_TESTS=1 if you are certain.\n"
+        )
+    return url
+
+
+TEST_DATABASE_URL = _test_database_url()
+
+# The app reads DATABASE_URL; pin it to the test database so nothing in the
+# app can reach whatever else the environment had set.
+os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 os.environ.setdefault("SESSION_SECRET", "test-secret")
 
 CHEF_LEGON = "chef@didijollof.com"
@@ -43,8 +77,22 @@ async def fresh_database():
     conn = await asyncpg.connect(TEST_DATABASE_URL)
     try:
         await conn.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
-        for name in ("0001_init.sql", "0002_seed.sql"):
-            await conn.execute((MIGRATIONS / name).read_text())
+        # Applied directly rather than through scripts/migrate.py — this runs
+        # before every test and the runner's bookkeeping would dominate. The
+        # tracking rows are still written so the database is left in the state
+        # the runner expects, instead of a schema it thinks is unmigrated.
+        await conn.execute(
+            "CREATE TABLE schema_migrations ("
+            " filename TEXT PRIMARY KEY, checksum TEXT NOT NULL,"
+            " applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW())"
+        )
+        for path in sorted(MIGRATIONS.glob("*.sql")):
+            await conn.execute(path.read_text())
+            await conn.execute(
+                "INSERT INTO schema_migrations (filename, checksum) VALUES ($1, $2)",
+                path.name,
+                hashlib.sha256(path.read_bytes()).hexdigest()[:16],
+            )
     finally:
         await conn.close()
     yield

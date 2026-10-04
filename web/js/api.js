@@ -7,11 +7,14 @@
  */
 
 export class ApiError extends Error {
-  constructor(status, detail, payload) {
+  constructor(status, detail, payload, requestId) {
     super(detail || `request failed (${status})`);
     this.name = 'ApiError';
     this.status = status;
     this.payload = payload;
+    // Matches the server log line for this exact failure. Shown to the user so
+    // they can quote it, which turns "it broke" into something findable.
+    this.requestId = requestId || payload?.request_id || null;
   }
   get isAuth() { return this.status === 401; }
   get isOffline() { return this.status === 0; }
@@ -38,7 +41,12 @@ async function request(method, path, body) {
   if (text) { try { payload = JSON.parse(text); } catch { /* non-JSON error page */ } }
 
   if (!response.ok) {
-    throw new ApiError(response.status, detailOf(payload) || response.statusText, payload);
+    throw new ApiError(
+      response.status,
+      detailOf(payload) || response.statusText,
+      payload,
+      response.headers.get('X-Request-Id'),
+    );
   }
   return payload;
 }

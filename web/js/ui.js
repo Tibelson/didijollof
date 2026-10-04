@@ -68,11 +68,15 @@ export function emptyState(title, detail) {
 }
 
 let toastTimer;
-export function toast(message, { bad = false } = {}) {
+export function toast(message, { bad = false, reference = null } = {}) {
   const host = document.getElementById('toasts');
   if (!host) return;
   clear(host);
-  const node = el('div', { class: bad ? 'toast bad' : 'toast', text: message });
+  const node = el('div', { class: bad ? 'toast bad' : 'toast' },
+    el('span', { text: message }),
+    // The server's request id. Printing it is what makes a phoned-in report
+    // ("it said error, I don't know") actually diagnosable.
+    reference ? el('code', { class: 'toast-ref', text: reference }) : null);
   host.append(node);
   node.animate?.(
     [{ transform: 'translateY(10px)', opacity: 0 }, { transform: 'none', opacity: 1 }],

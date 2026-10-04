@@ -90,11 +90,24 @@ async def test_chef_cannot_read_a_request_belonging_to_another_branch(
 
 
 async def test_denial_is_indistinguishable_from_a_missing_branch(client, chef):
-    """A forbidden branch and a nonexistent one must look identical."""
+    """A forbidden branch and a nonexistent one must look identical.
+
+    `request_id` is excluded because it is unique on every response by design —
+    including two calls to the same URL — so it carries nothing an attacker
+    could use to tell the two cases apart. Everything that could is compared.
+    """
     forbidden = await client.get("/api/branches/2/inventory", cookies=chef.cookies)
     missing = await client.get("/api/branches/99999/inventory", cookies=chef.cookies)
+
     assert forbidden.status_code == missing.status_code == 404
-    assert forbidden.json() == missing.json()
+
+    def comparable(response):
+        return {k: v for k, v in response.json().items() if k != "request_id"}
+
+    assert comparable(forbidden) == comparable(missing)
+    assert forbidden.json()["detail"] == missing.json()["detail"] == "branch not found"
+    # Both must actually have an id; the exclusion above must not hide its absence.
+    assert forbidden.json()["request_id"] and missing.json()["request_id"]
 
 
 async def test_owner_can_read_every_branch(client, owner):

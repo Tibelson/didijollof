@@ -235,6 +235,32 @@ document.getElementById('offline').hidden = navigator.onLine;
 // Keep the cart badge in step with the draft without re-rendering the screen.
 subscribe(() => renderNav(parseRoute().path));
 
+/* Browser-side failures are otherwise invisible: nothing reaches the server and
+   nobody is opening a developer console mid-service. Reported once per session
+   per unique message, so a render loop cannot turn into a log flood. */
+const reportedErrors = new Set();
+function reportClientError(message, source, stack) {
+  const key = String(message).slice(0, 200);
+  if (reportedErrors.has(key) || reportedErrors.size > 10) return;
+  reportedErrors.add(key);
+  try {
+    navigator.sendBeacon?.('/api/client-error', new Blob([JSON.stringify({
+      message: key,
+      source: String(source || '').slice(0, 200),
+      stack: String(stack || '').slice(0, 1200),
+      screen: location.hash || '/',
+      version: 'didi-v8',
+    })], { type: 'application/json' }));
+  } catch { /* reporting must never itself break the page */ }
+}
+
+window.addEventListener('error', e => {
+  reportClientError(e.message, `${e.filename}:${e.lineno}`, e.error?.stack);
+});
+window.addEventListener('unhandledrejection', e => {
+  reportClientError(e.reason?.message || e.reason, 'unhandledrejection', e.reason?.stack);
+});
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => { /* non-fatal */ });

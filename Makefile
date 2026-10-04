@@ -1,4 +1,4 @@
-.PHONY: help setup db-up db-down db-reset dev test shots deploy clean
+.PHONY: help setup db-up db-down db-reset migrate migrate-check dev test logs logs-errors deploy clean
 
 help:
 	@echo "Didi Jollof"
@@ -7,9 +7,14 @@ help:
 	@echo "  make db-reset  drop, recreate and re-seed the local database"
 	@echo "  make dev       run the API + PWA on http://localhost:8787"
 	@echo "  make test      run the backend test suite"
+	@echo "  make migrate   apply pending migrations to \$$DATABASE_URL"
+	@echo "  make logs      stream live Worker logs"
 	@echo "  make deploy    push the Worker to Cloudflare"
+	@echo ""
+	@echo "  Something broken? See DEBUGGING.md"
 
 PG = PGPASSWORD=didi psql -h localhost -p 55432 -U didi -d didi -v ON_ERROR_STOP=1 -q
+LOCAL_DB = postgresql://didi:didi@localhost:55432/didi
 
 setup:
 	python3 -m venv .venv
@@ -26,9 +31,23 @@ db-down:
 
 db-reset: db-up
 	@$(PG) -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
-	@$(PG) -f migrations/0001_init.sql
-	@$(PG) -f migrations/0002_seed.sql
+	@DATABASE_URL=$(LOCAL_DB) ./.venv/bin/python scripts/migrate.py
 	@echo "database reset and seeded"
+
+# Applies to whatever DATABASE_URL points at; defaults to the local container.
+migrate:
+	@DATABASE_URL=$${DATABASE_URL:-$(LOCAL_DB)} ./.venv/bin/python scripts/migrate.py
+
+migrate-check:
+	@DATABASE_URL=$${DATABASE_URL:-$(LOCAL_DB)} ./.venv/bin/python scripts/migrate.py --check
+
+# Live Worker logs. Streams from now — it cannot show you the past; use the
+# Cloudflare dashboard for history.
+logs:
+	cd api && npx --yes wrangler tail --format pretty
+
+logs-errors:
+	cd api && npx --yes wrangler tail --format pretty --status error
 
 dev: db-up
 	./.venv/bin/python scripts/dev.py

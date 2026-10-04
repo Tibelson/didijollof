@@ -6,8 +6,6 @@
 --
 -- Target: PostgreSQL 16 (Neon in production, Docker locally).
 
-BEGIN;
-
 -- [+] chef counts and orders for one branch; an owner reviews several.
 CREATE TYPE user_role AS ENUM (
     'chef',
@@ -241,5 +239,3 @@ CREATE INDEX orders_branch_created_idx
 -- [+] The inventory screen pulls every item for one branch.
 CREATE INDEX branch_items_branch_idx
     ON branch_items (branch_id);
-
-COMMIT;

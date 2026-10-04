@@ -48,7 +48,8 @@ export function reviewView({ go }) {
       send.textContent = 'Send to Mr Owner';
       toast(err instanceof ApiError && err.isOffline
         ? 'You are offline. The list was not sent.'
-        : err.message || 'Could not send the list.', { bad: true });
+        : err.message || 'Could not send the list.',
+        { bad: true, reference: err instanceof ApiError ? err.requestId : null });
     }
   });
 

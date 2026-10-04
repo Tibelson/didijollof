@@ -1,0 +1,151 @@
+name: CI
+
+# Tests run on every push and pull request. Deploying is a separate job that
+# needs the `production` environment, which is configured in GitHub with a
+# required reviewer — so a green build never reaches the kitchen on its own.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  # A newer push supersedes an in-flight run on the same branch, except on main
+  # where a cancelled deploy could leave migrations applied and code not.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        # Disposable, and the only database the suite is allowed to touch —
+        # conftest refuses to run against a non-local host.
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: didi
+          POSTGRES_PASSWORD: didi
+          POSTGRES_DB: didi
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U didi -d didi"
+          --health-interval 2s --health-timeout 3s --health-retries 20
+
+    env:
+      DIDI_TEST_DATABASE_URL: postgresql://didi:didi@localhost:5432/didi
+      SESSION_SECRET: ci-secret-not-used-anywhere-real
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install fastapi 'pydantic[email]' asyncpg pytest pytest-asyncio httpx uvicorn
+
+      - name: Migrations apply cleanly from scratch
+        env:
+          DATABASE_URL: postgresql://didi:didi@localhost:5432/didi
+        run: |
+          python scripts/migrate.py
+          # Running twice must be a no-op; if it is not, the runner is unsafe
+          # to point at production.
+          python scripts/migrate.py --check
+
+      - name: Tests
+        working-directory: api
+        run: python -m pytest -q -W ignore::DeprecationWarning
+
+      - name: Worker builds
+        working-directory: api
+        run: npx --yes wrangler deploy --dry-run --outdir /tmp/build
+
+  deploy:
+    name: Deploy to production
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Gated: GitHub holds this job until a required reviewer approves it.
+    # Configure at Settings → Environments → production → required reviewers.
+    environment:
+      name: production
+      url: https://didi-jollof.elvistiburu17.workers.dev
+
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Show pending migrations
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+        run: |
+          pip install asyncpg
+          python scripts/migrate.py --check || true
+
+      # Migrations run before the code that depends on them. Each one is in its
+      # own transaction, so a failure here stops the deploy with the database on
+      # the last good migration rather than half-way through a broken one.
+      - name: Apply migrations to Neon
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+        run: python scripts/migrate.py
+
+      - name: Deploy Worker
+        working-directory: api
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          # pywrangler, not wrangler: only it vendors the workers-py SDK into
+          # the bundle. Plain wrangler uploads fine and then fails at startup
+          # with "No module named 'workers'".
+          uvx --from workers-py pywrangler deploy
+
+      - name: Smoke test the deployment
+        run: |
+          URL=https://didi-jollof.elvistiburu17.workers.dev
+          echo "waiting for propagation…"
+          for i in $(seq 1 24); do
+            code=$(curl -s -o /tmp/h.json -w '%{http_code}' --max-time 20 "$URL/api/health" || true)
+            [ "$code" = "200" ] && break
+            sleep 5
+          done
+          echo "health:  $(cat /tmp/h.json)"
+          test "$code" = "200" || { echo "::error::Worker is not healthy after deploy"; exit 1; }
+
+          db=$(curl -s --max-time 25 "$URL/api/health/db")
+          echo "database: $db"
+          echo "$db" | grep -q '"status": *"ok"' \
+            || { echo "::error::Database unreachable through Hyperdrive"; exit 1; }
+
+          shell=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$URL/")
+          test "$shell" = "200" || { echo "::error::PWA shell did not load ($shell)"; exit 1; }
+
+          echo "Deployment healthy."
+
+      - name: Roll back on failed smoke test
+        if: failure()
+        working-directory: api
+        run: |
+          echo "::warning::Smoke test failed. Previous versions:"
+          npx --yes wrangler versions list 2>&1 | head -20
+          echo "::warning::Roll back with: wrangler rollback --message 'failed smoke test'"

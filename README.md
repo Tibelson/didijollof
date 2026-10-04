@@ -22,7 +22,38 @@ make test       # backend suite, including branch isolation
 Sign in as `chef@didijollof.com` / `didi1234` (Legon Outlet), or
 `owner@didijollof.com` for an account mapped to all three branches.
 
-Deployment: see [DEPLOY.md](DEPLOY.md).
+Deployment: see [DEPLOY.md](DEPLOY.md). When something breaks:
+[DEBUGGING.md](DEBUGGING.md).
+
+## CI/CD
+
+`.github/workflows/ci.yml` runs on every push and pull request:
+
+1. **Tests** — against a disposable Postgres container. Migrations must apply
+   cleanly from scratch *and* be a no-op on a second run, then the 74 tests run,
+   then the Worker must build.
+2. **Deploy** — only from `main`, and only after a human approves it in the
+   `production` environment. Migrations are applied to Neon first, then the
+   Worker, then a smoke test checks health, database reachability and the PWA
+   shell. A failed smoke test prints the rollback command.
+
+Repository secrets required: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`,
+`NEON_DATABASE_URL` (the direct, non-pooler string).
+
+## Migrations
+
+```bash
+make migrate-check    # what is pending
+make migrate          # apply it
+```
+
+Each file runs in its own transaction and is recorded with a checksum, so a
+migration cannot run twice and cannot be quietly edited after it has run. To
+change something already applied, write a new file.
+
+Migration files must not contain `BEGIN`/`COMMIT` — the runner owns the
+transaction, and a `COMMIT` inside the file would end it early and defeat the
+rollback-on-failure the runner exists to provide.
 
 ## Layout
 

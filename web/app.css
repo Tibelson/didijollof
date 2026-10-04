@@ -723,6 +723,11 @@ h1, h2, h3 { margin: 0; letter-spacing: -.02em; }
   padding: .8125rem 1rem; font-size: .9375rem; font-weight: 600; box-shadow: var(--shadow-lg);
 }
 .toast.bad { background: var(--crit); }
+.toast-ref {
+  display: block; margin-top: .3125rem;
+  font-family: ui-monospace, Menlo, monospace; font-size: .8125rem;
+  opacity: .85; letter-spacing: .04em;
+}
 
 .offline-bar {
   background: var(--ink); color: var(--cream); text-align: center;

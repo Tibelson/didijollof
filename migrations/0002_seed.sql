@@ -8,8 +8,6 @@
 -- Hashes are pbkdf2_sha256 at the cost set in api/src/security.py.
 -- Rotate these before any real deployment.
 
-BEGIN;
-
 INSERT INTO branches (name, location) VALUES
     ('Legon Outlet',   'Legon, Accra'),
     ('Osu Outlet',     'Osu, Accra'),
@@ -106,5 +104,3 @@ UPDATE branch_items bi
        ) AS v(name, stock, min_level, par_level)
  WHERE bi.item_id = (SELECT id FROM items WHERE items.name = v.name)
    AND bi.branch_id = (SELECT id FROM branches WHERE branches.name = 'Legon Outlet');
-
-COMMIT;
