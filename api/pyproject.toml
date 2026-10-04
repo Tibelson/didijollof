@@ -1,0 +1,24 @@
+[project]
+name = "didi-api"
+version = "0.1.0"
+description = "Didi Jollof kitchen stock API"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "pydantic[email]",
+    "asyncpg",
+]
+
+[dependency-groups]
+dev = [
+    "workers-py",
+    "pytest",
+    "pytest-asyncio",
+    "httpx",
+    "uvicorn",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["src"]

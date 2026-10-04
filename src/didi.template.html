@@ -1,0 +1,755 @@
+<title>Didi Jollof — Stock &amp; Replenishment</title>
+
+<style>
+@font-face{font-family:'Gabarito';src:url(data:font/woff2;base64,__GABARITO__) format('woff2');font-weight:400 900;font-display:block}
+@font-face{font-family:'Geist';src:url(data:font/woff2;base64,__GEIST__) format('woff2');font-weight:400 800;font-display:block}
+
+/* ============ TOKENS — same names as the Figma Brand collection ============ */
+:root{
+  --page:#EFEEEB; --page-card:#FFFFFF; --page-ink:#1C0F09; --page-mute:#67625E;
+  --page-line:rgba(28,15,9,.10); --page-accent:#BE2F18;
+
+  --canvas:#F2F1EE; --card:#FFFFFF; --sunken:#EAE9E5;
+  --poster:#A82713; --brandred:#E8452B; --ink:#1C0F09;
+  --tp:#1C0F09; --ts:#67625E; --onred:#FFF3E2; --onyel:#1C0F09;
+  --yellow:#F9C53C; --cream:#FFF3E2;
+  --crit:#BE2F18; --low:#8A6106; --ok:#2E7D4F;
+  --tint-crit:#FBE3DD; --tint-low:#FCEFD1; --tint-ok:#DEEFE4;
+  --line:#E4E2DD;
+  --shadow:0 10px 28px -8px rgba(60,20,8,.26);
+  --shadow-lg:0 30px 70px -22px rgba(60,20,8,.5),0 4px 12px rgba(60,20,8,.14);
+
+  --t1:11px; --t2:12px; --t3:13px; --t4:15px; --t5:17px; --t6:22px; --t7:42px;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px;
+  --r1:12px; --r2:20px; --r3:26px; --r4:34px; --rp:999px;
+  --spring:cubic-bezier(.22,1.2,.36,1);
+  --ease:cubic-bezier(.22,.8,.28,1);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --page:#0A0A0B; --page-card:#161618; --page-ink:#F5F3F0; --page-mute:#98938E;
+    --page-line:rgba(245,243,240,.12); --page-accent:#FF8A6B;
+    --canvas:#000000; --card:#1A1A1C; --sunken:#0E0E10;
+    --poster:#8F2412; --ink:#000000;
+    --tp:#F5F3F0; --ts:#98938E;
+    --crit:#FF6A4D; --low:#F9C53C; --ok:#5DD08C;
+    --tint-crit:#3A1712; --tint-low:#33250A; --tint-ok:#123022;
+    --line:#2A2A2C;
+    --shadow:0 10px 28px -8px rgba(0,0,0,.6);
+    --shadow-lg:0 30px 70px -22px rgba(0,0,0,.85),0 4px 12px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"]{
+  --page:#0A0A0B; --page-card:#161618; --page-ink:#F5F3F0; --page-mute:#98938E;
+  --page-line:rgba(245,243,240,.12); --page-accent:#FF8A6B;
+  --canvas:#000000; --card:#1A1A1C; --sunken:#0E0E10;
+  --poster:#8F2412; --ink:#000000;
+  --tp:#F5F3F0; --ts:#98938E;
+  --crit:#FF6A4D; --low:#F9C53C; --ok:#5DD08C;
+  --tint-crit:#3A1712; --tint-low:#33250A; --tint-ok:#123022;
+  --line:#2A2A2C;
+  --shadow:0 10px 28px -8px rgba(0,0,0,.6);
+  --shadow-lg:0 30px 70px -22px rgba(0,0,0,.85),0 4px 12px rgba(0,0,0,.5);
+}
+/* the app's own Service / Late switch — declared last so it wins */
+.phone[data-mode="service"]{--canvas:#F2F1EE;--card:#FFFFFF;--sunken:#EAE9E5;--poster:#A82713;--ink:#1C0F09;
+  --tp:#1C0F09;--ts:#67625E;--crit:#BE2F18;--low:#8A6106;--ok:#2E7D4F;
+  --tint-crit:#FBE3DD;--tint-low:#FCEFD1;--tint-ok:#DEEFE4;--line:#E4E2DD}
+.phone[data-mode="late"]{--canvas:#000000;--card:#1A1A1C;--sunken:#0E0E10;--poster:#8F2412;--ink:#000000;
+  --tp:#F5F3F0;--ts:#98938E;--crit:#FF6A4D;--low:#F9C53C;--ok:#5DD08C;
+  --tint-crit:#3A1712;--tint-low:#33250A;--tint-ok:#123022;--line:#2A2A2C}
+
+/* ============ BASE ============ */
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+body{margin:0;background:var(--page);color:var(--page-ink);
+  font-family:'Geist',ui-sans-serif,system-ui,-apple-system,sans-serif;line-height:1.45;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;margin:0;padding:0;cursor:pointer}
+input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--page-accent);outline-offset:2px;border-radius:8px}
+.phone :focus-visible{outline-color:var(--yellow)}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.disp{font-family:'Gabarito',ui-sans-serif,system-ui,sans-serif;font-weight:900;letter-spacing:-.04em;line-height:.88}
+
+/* ============ STUDIO ============ */
+.studio{max-width:1260px;margin:0 auto;padding:clamp(20px,4vw,44px) clamp(16px,3vw,32px) 72px}
+.head{display:flex;flex-wrap:wrap;gap:var(--s5);align-items:flex-end;justify-content:space-between;margin-bottom:var(--s8)}
+.lock{display:flex;align-items:center;gap:10px}
+.lock svg{width:34px;height:34px;flex:none}
+.lock b{font-family:'Gabarito';font-weight:900;font-size:16px;letter-spacing:.1em;text-transform:uppercase}
+.head h1{margin:var(--s3) 0 6px;font-family:'Gabarito';font-weight:900;letter-spacing:-.035em;line-height:.95;
+  font-size:clamp(34px,5.6vw,60px);text-transform:uppercase;text-wrap:balance}
+.head h1 em{font-style:normal;color:var(--page-accent)}
+.head p{margin:0;max-width:52ch;color:var(--page-mute);font-size:var(--t4)}
+.tools{display:flex;gap:var(--s2);align-items:center;flex-wrap:wrap}
+.seg{display:flex;background:var(--page-card);border:1px solid var(--page-line);border-radius:var(--rp);padding:3px;gap:2px}
+.seg button{padding:8px 15px;border-radius:var(--rp);font-size:var(--t2);font-weight:700;color:var(--page-mute);
+  transition:color .2s var(--ease),background .2s var(--ease)}
+.seg button[aria-pressed="true"]{background:var(--page-ink);color:var(--page)}
+.ghost{padding:10px 16px;border-radius:var(--rp);border:1px solid var(--page-line);background:var(--page-card);
+  font-size:var(--t2);font-weight:700;transition:transform .18s var(--spring),border-color .2s}
+.ghost:hover{border-color:var(--page-accent)}
+.ghost:active{transform:scale(.95)}
+
+.grid{display:grid;grid-template-columns:minmax(0,auto) minmax(300px,1fr);gap:clamp(28px,4vw,56px);align-items:start}
+@media (max-width:940px){.grid{grid-template-columns:minmax(0,1fr)}}
+
+/* ============ PHONE ============ */
+.stage{display:flex;flex-direction:column;align-items:center;gap:var(--s4);position:sticky;top:24px}
+@media (max-width:940px){.stage{position:static}}
+.phone{position:relative;width:min(402px,100%);height:min(874px,82vh);min-height:620px;
+  background:var(--canvas);color:var(--tp);border-radius:44px;box-shadow:var(--shadow-lg);
+  overflow:hidden;isolation:isolate;transition:background .35s var(--ease)}
+.cap{font-size:var(--t2);color:var(--page-mute);text-align:center}
+.cap b{color:var(--page-ink);font-weight:700}
+
+.screen{position:absolute;inset:0;display:none;flex-direction:column}
+.screen.on{display:flex}
+.scroll{flex:1;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;padding-bottom:118px}
+.scroll::-webkit-scrollbar{display:none}
+
+/* poster */
+.poster{position:relative;background:var(--poster);color:var(--onred);
+  border-radius:0 0 var(--r4) var(--r4);padding:32px 22px 26px;overflow:hidden;flex:none}
+.tex{position:absolute;left:-40px;right:-40px;font-family:'Gabarito';font-weight:900;font-size:12px;
+  letter-spacing:.03em;color:var(--cream);opacity:.055;white-space:nowrap;pointer-events:none;user-select:none}
+.ptop{position:relative;display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.ptop svg{width:24px;height:24px;flex:none}
+.ptop b{font-size:var(--t1);font-weight:700;letter-spacing:.12em;color:var(--cream)}
+.ptop span{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--yellow)}
+.eyebrow{position:relative;font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--cream);opacity:.92}
+.phead{position:relative;margin:10px 0 0}
+.phead span{display:block;font-size:var(--t7);text-transform:uppercase}
+.phead .y{color:var(--yellow)}
+.phead .c{color:var(--cream)}
+.chip{position:relative;display:inline-flex;align-items:center;gap:7px;margin-top:14px;background:var(--yellow);
+  color:var(--onyel);border-radius:var(--rp);padding:9px 15px;font-size:var(--t2);font-weight:700;
+  font-variant-numeric:tabular-nums}
+.chip i{width:7px;height:7px;border-radius:50%;background:var(--crit);animation:pulse 2s var(--ease) infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+
+/* body */
+.body{padding:22px 20px 0;display:flex;flex-direction:column;gap:14px}
+
+/* dish tile — swap the .ph for <img> when real photography lands */
+/* dish tiles — real photography, with a brand ground behind while it decodes */
+.tile{flex:none;border-radius:30%;overflow:hidden;display:grid;place-items:center;position:relative}
+.tile img{width:100%;height:100%;object-fit:cover;display:block}
+.tile .ph{width:78%;height:78%}
+.tile.jollof {background:#E8452B;color:#F9C53C}
+.tile.fried  {background:#F9C53C;color:#A82713}
+.tile.waakye {background:#A82713;color:#FFF3E2}
+.tile.chicken{background:#FFF3E2;color:#E8452B}
+
+/* grouped-list surfaces: white on a neutral ground, no borders, no decoration */
+.card{background:var(--card);border-radius:22px;padding:15px;
+  display:flex;align-items:center;gap:14px}
+.card .meat{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.row1{display:flex;align-items:center;gap:8px}
+.name{font-size:var(--t5);font-weight:700;letter-spacing:-.02em;flex:1;min-width:0}
+
+.tag{flex:none;display:inline-grid;place-items:center;height:22px;padding:0 9px;border-radius:var(--rp);
+  font-size:10px;font-weight:700;letter-spacing:.08em}
+.tag.critical,.tag.out{background:var(--tint-crit);color:var(--crit)}
+.tag.low{background:var(--tint-low);color:var(--low)}
+.tag.ok{background:var(--tint-ok);color:var(--ok)}
+
+.bar{position:relative;height:8px;border-radius:4px;background:var(--sunken)}
+.bar i{display:block;height:100%;border-radius:4px;width:0;background:var(--brandred);
+  transition:width .9s var(--spring)}
+.bar i.low{background:var(--low)}
+.bar i.ok{background:var(--ok)}
+/* the minimum, as a notch rather than a number to decode — fall left of it and the tag goes critical */
+.bar .min{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;border-radius:1px;
+  background:var(--tp);opacity:.32;transition:left .9s var(--spring)}
+
+/* ---- the count the chef types: the only editable number on the stock screen ---- */
+.left{display:flex;align-items:center;gap:9px;font-size:var(--t3);font-weight:500;color:var(--ts);
+  font-variant-numeric:tabular-nums;cursor:text}
+.left .lab{flex:none;font-size:10px;font-weight:700;letter-spacing:.1em}
+.count{flex:none;background:var(--sunken);border-radius:var(--rp);height:40px;display:grid;place-items:center;
+  transition:background .2s var(--ease),box-shadow .2s var(--ease)}
+.count:focus-within{background:var(--card);box-shadow:inset 0 0 0 2px var(--yellow)}
+.count input{width:62px;height:40px;border:0;background:none;text-align:center;border-radius:var(--rp);
+  font-size:var(--t5);font-weight:700;color:var(--tp);font-variant-numeric:tabular-nums;
+  appearance:textfield;-moz-appearance:textfield}
+.count input:focus{outline:none}
+.count input::-webkit-outer-spin-button,.count input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.left .of{min-width:0}
+.left .done{width:14px;height:14px;flex:none;stroke:var(--ok);stroke-width:3;fill:none;
+  stroke-linecap:round;stroke-linejoin:round;opacity:0;transition:opacity .25s var(--ease)}
+.left.counted .done{opacity:1}
+.hint{margin:0 2px;font-size:var(--t2);font-weight:600;color:var(--ts)}
+
+.cta{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:19px;border-radius:24px;
+  background:var(--yellow);color:var(--onyel);font-size:var(--t4);font-weight:700;letter-spacing:-.01em;
+  transition:transform .16s var(--spring),filter .2s var(--ease)}
+.cta:hover{filter:brightness(1.05)}
+.cta.press{transform:scale(.97)}
+.cta[disabled]{cursor:default;opacity:.65}
+.cta.sent{background:var(--tint-low);color:var(--low)}
+/* the stock list scrolls once every item carries a count field, so the build
+   action pins above the tab bar instead of disappearing below the fold */
+.cta.pinned{position:absolute;left:20px;right:20px;bottom:96px;width:auto;z-index:4;box-shadow:var(--shadow)}
+/* room to scroll the last counted card clear of the pinned action */
+.screen[data-s="stock"] .scroll{padding-bottom:204px}
+.spin{width:16px;height:16px;border-radius:50%;border:2.2px solid currentColor;border-right-color:transparent;
+  animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+.stepper{flex:none;display:flex;align-items:center;background:var(--sunken);border-radius:20px;height:40px}
+.stepper button{width:34px;height:40px;display:grid;place-items:center;border-radius:20px;font-size:17px;
+  transition:background .16s var(--ease),transform .16s var(--spring)}
+.stepper button:last-child{color:var(--crit);font-weight:700}
+.stepper button:active{transform:scale(.86)}
+.stepper button[disabled]{opacity:.3;cursor:not-allowed}
+.stepper output{min-width:34px;text-align:center;font-size:var(--t4);font-weight:700;font-variant-numeric:tabular-nums}
+
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat{background:var(--card);border-radius:22px;padding:17px}
+.stat b{display:block;font-family:'Gabarito';font-weight:900;font-size:22px;letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums}
+.stat span{display:block;margin-top:5px;font-size:var(--t1);color:var(--ts);font-weight:500}
+
+.sect{font-family:'Gabarito';font-weight:900;font-size:21px;letter-spacing:-.03em;text-transform:uppercase;margin:6px 0 0}
+.rowcard{background:var(--card);border-radius:22px;padding:13px 15px;
+  display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+  transition:transform .3s var(--spring),opacity .3s var(--ease),background .2s var(--ease)}
+button.rowcard:hover{background:color-mix(in srgb,var(--card) 92%,var(--tp))}
+.rowcard.leaving{opacity:0;transform:translateX(-26px) scale(.97)}
+.rowcard .meat{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.rowcard .n{font-size:var(--t4);font-weight:700;letter-spacing:-.01em}
+.rowcard .m{font-size:var(--t2);color:var(--ts);font-weight:500;font-variant-numeric:tabular-nums}
+.chev{color:var(--ts);font-size:18px;flex:none}
+
+.total{display:flex;align-items:center;background:var(--poster);border-radius:20px;padding:17px 18px}
+.total span{font-size:var(--t3);font-weight:600;color:var(--cream);letter-spacing:.06em;text-transform:uppercase;font-size:11px}
+.total b{margin-left:auto;font-family:'Gabarito';font-weight:900;font-size:22px;letter-spacing:-.03em;
+  color:var(--yellow);font-variant-numeric:tabular-nums}
+
+.avatar{width:58px;height:58px;flex:none;border-radius:50%;background:var(--yellow);color:var(--onyel);
+  display:grid;place-items:center;font-family:'Gabarito';font-weight:900;font-size:18px;letter-spacing:-.02em}
+
+.tabbar{position:absolute;left:24px;right:24px;bottom:22px;height:60px;background:var(--poster);
+  border-radius:30px;display:flex;padding:8px;gap:0;z-index:5;box-shadow:var(--shadow)}
+.tabpill{position:absolute;top:8px;left:8px;width:calc((100% - 16px)/4);height:44px;border-radius:22px;
+  background:var(--yellow);transition:transform .5s var(--spring);will-change:transform}
+.tab{position:relative;z-index:1;flex:1;display:grid;place-items:center;border-radius:22px;
+  font-size:var(--t2);font-weight:500;color:var(--cream);transition:color .3s var(--ease),transform .2s var(--spring)}
+.tab[aria-selected="true"]{color:var(--onyel);font-weight:700}
+.tab:active{transform:scale(.92)}
+
+.toasts{position:absolute;left:24px;right:24px;bottom:170px;z-index:6;pointer-events:none}
+.toast{display:flex;align-items:center;gap:12px;background:var(--poster);color:var(--cream);border-radius:16px;
+  padding:13px 16px;font-size:var(--t2);font-weight:600;box-shadow:var(--shadow);pointer-events:auto}
+.toast button{margin-left:auto;color:var(--yellow);font-weight:700}
+
+.empty{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding:36px 20px;color:var(--ts)}
+.empty b{font-size:var(--t4);color:var(--tp)}
+.empty span{font-size:var(--t2);max-width:28ch}
+
+/* reveal */
+.rise{opacity:0;transform:translateY(14px)}
+.rise.in{opacity:1;transform:none;transition:opacity .5s var(--ease),transform .6s var(--spring)}
+
+/* ============ NOTES ============ */
+.notes{background:var(--page-card);border:1px solid var(--page-line);border-radius:26px;padding:clamp(20px,2.4vw,30px)}
+.notes h2{margin:0 0 6px;font-family:'Gabarito';font-weight:900;font-size:26px;letter-spacing:-.03em;text-transform:uppercase}
+.notes .lede{margin:0 0 var(--s5);color:var(--page-mute);font-size:var(--t3);max-width:60ch}
+.notes h3{margin:var(--s6) 0 var(--s3);font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--page-mute)}
+.sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+.swatch{border:1px solid var(--page-line);border-radius:12px;overflow:hidden;background:var(--page)}
+.swatch i{display:block;height:36px}
+.swatch b{display:block;padding:7px 9px 1px;font-size:10.5px;font-weight:700}
+.swatch code{display:block;padding:0 9px 8px;font-size:9.5px;color:var(--page-mute);font-family:ui-monospace,Menlo,monospace}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.list li{display:grid;grid-template-columns:18px 1fr;gap:11px;font-size:var(--t3);line-height:1.5;max-width:62ch}
+.list svg{width:14px;height:14px;margin-top:4px;stroke:var(--page-accent);stroke-width:2.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.list b{font-weight:700}
+code{font-family:ui-monospace,Menlo,monospace;font-size:.88em;background:var(--page);padding:1px 5px;border-radius:5px;white-space:nowrap}
+.tblw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:var(--t2);font-variant-numeric:tabular-nums}
+th{text-align:left;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--page-mute);padding:0 10px 7px 0}
+td{padding:8px 10px 8px 0;border-top:1px solid var(--page-line);white-space:nowrap}
+.bad{color:#B3261E;font-weight:700}.good{color:#2E6B39;font-weight:700}
+:root[data-theme="dark"] .bad,:root[data-theme="dark"] .good{filter:brightness(1.6)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .bad,:root:not([data-theme="light"]) .good{filter:brightness(1.6)}}
+.foot{margin:var(--s6) 0 0;padding-top:var(--s5);border-top:1px solid var(--page-line);font-size:var(--t2);color:var(--page-mute);max-width:62ch}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+  .rise{opacity:1;transform:none}
+}
+</style>
+
+<svg class="vh" aria-hidden="true"><defs>
+<symbol id="mark" viewBox="0 0 120 120">
+  <circle cx="60" cy="60" r="60" fill="#F9C53C"/>
+  <ellipse cx="31" cy="60" rx="15" ry="8.5" fill="#E8452B"/>
+  <rect x="44" y="57.5" width="58" height="5" rx="2.5" fill="#E8452B"/>
+  <rect x="76" y="46" width="26" height="4" rx="2" fill="#E8452B"/>
+  <rect x="76" y="55" width="26" height="4" rx="2" fill="#E8452B"/>
+  <rect x="76" y="64" width="26" height="4" rx="2" fill="#E8452B"/>
+</symbol>
+<symbol id="tick" viewBox="0 0 24 24"><path d="m4.8 12.6 4.8 4.8L19.2 7.2"/></symbol>
+<symbol id="arrow" viewBox="0 0 24 24"><path d="M4.6 12h14.8M13.4 6.2 19.4 12l-6 5.8"/></symbol>
+<!-- dish marks, drawn in the flat vector language of their logo -->
+<symbol id="d-jollof" viewBox="0 0 120 120">
+  <ellipse cx="40" cy="41" rx="10" ry="5.5" fill="currentColor" transform="rotate(-22 40 41)"/>
+  <ellipse cx="61" cy="33" rx="10" ry="5.5" fill="currentColor" transform="rotate(12 61 33)"/>
+  <ellipse cx="81" cy="42" rx="10" ry="5.5" fill="currentColor" transform="rotate(-12 81 42)"/>
+  <rect x="13" y="52" width="94" height="12" rx="6" fill="currentColor"/>
+  <path d="M25 67 h70 a35 35 0 0 1 -70 0 z" fill="currentColor"/>
+</symbol>
+<symbol id="d-fried" viewBox="0 0 120 120">
+  <rect x="34" y="33" width="15" height="15" rx="4.5" fill="currentColor" transform="rotate(-14 41 40)"/>
+  <rect x="54" y="25" width="15" height="15" rx="4.5" fill="currentColor" transform="rotate(10 61 32)"/>
+  <rect x="74" y="34" width="15" height="15" rx="4.5" fill="currentColor" transform="rotate(-8 81 41)"/>
+  <rect x="13" y="52" width="94" height="12" rx="6" fill="currentColor"/>
+  <path d="M25 67 h70 a35 35 0 0 1 -70 0 z" fill="currentColor"/>
+</symbol>
+<symbol id="d-waakye" viewBox="0 0 120 120">
+  <circle cx="60" cy="33" r="17" fill="currentColor"/>
+  <rect x="13" y="52" width="94" height="12" rx="6" fill="currentColor"/>
+  <path d="M25 67 h70 a35 35 0 0 1 -70 0 z" fill="currentColor"/>
+</symbol>
+<symbol id="d-chicken" viewBox="0 0 120 120">
+  <ellipse cx="47" cy="77" rx="31" ry="26" fill="currentColor"/>
+  <rect x="61" y="27" width="16" height="44" rx="8" fill="currentColor" transform="rotate(32 69 49)"/>
+  <circle cx="84" cy="31" r="12" fill="currentColor"/>
+  <circle cx="66" cy="23" r="11" fill="currentColor"/>
+</symbol>
+</defs></svg>
+
+<div class="studio">
+  <header class="head">
+    <div>
+      <div class="lock"><svg><use href="#mark"/></svg><b>didi jollof</b></div>
+      <h1>Stock &amp;<br><em>Replenishment</em></h1>
+      <p>The back-of-house tool, built in the brand’s own language — poster type, the red-and-yellow, and the dishes themselves. Every control runs.</p>
+    </div>
+    <div class="tools">
+      <div class="seg" role="group" aria-label="Page theme">
+        <button type="button" data-theme-set="light" aria-pressed="false">Light</button>
+        <button type="button" data-theme-set="system" aria-pressed="true">System</button>
+        <button type="button" data-theme-set="dark" aria-pressed="false">Dark</button>
+      </div>
+      <button type="button" class="ghost" id="reset">Reset</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <section class="stage">
+      <div class="phone" id="phone" data-mode="auto">
+
+        <!-- STOCK -->
+        <section class="screen on" data-s="stock" role="tabpanel" id="p-stock" aria-label="Stock">
+          <div class="poster">
+            <div class="tex" style="top:8px">TASTY · YUMMY · DELICIOUS · OH YEAH · TASTY · YUMMY · DELICIOUS</div>
+            <div class="tex" style="top:52px;left:-90px">DELICIOUS · OH YEAH · TASTY · YUMMY · DELICIOUS · OH YEAH</div>
+            <div class="tex" style="top:96px">OH YEAH · TASTY · YUMMY · DELICIOUS · OH YEAH · TASTY</div>
+            <div class="tex" style="top:140px;left:-70px">YUMMY · DELICIOUS · OH YEAH · TASTY · YUMMY · DELICIOUS</div>
+            <div class="tex" style="top:184px">TASTY · YUMMY · DELICIOUS · OH YEAH · TASTY · YUMMY</div>
+            <div class="ptop"><svg><use href="#mark"/></svg><b>DIDI JOLLOF</b><span>OSU OUTLET</span></div>
+            <div class="eyebrow">END OF SERVICE · 8:00 PM CUTOFF</div>
+            <div class="phead disp">
+              <span class="y rise" id="h1a">FOUR THINGS</span>
+              <span class="c rise" id="h1b">RUNNING LOW</span>
+            </div>
+            <div class="chip"><i></i><span id="clock">—</span></div>
+          </div>
+          <div class="scroll"><div class="body">
+            <p class="hint" id="counthint"></p>
+            <div id="stocklist"></div>
+          </div></div>
+          <button type="button" class="cta pinned" id="buildcta">
+            <span id="buildtxt">Build tonight’s order</span>
+            <svg class="tick" style="width:17px;height:17px;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round"><use href="#arrow"/></svg>
+          </button>
+        </section>
+
+        <!-- ORDER -->
+        <section class="screen" data-s="order" role="tabpanel" id="p-order" aria-label="Order">
+          <div class="poster">
+            <div class="tex" style="top:8px">TASTY · YUMMY · DELICIOUS · OH YEAH · TASTY · YUMMY · DELICIOUS</div>
+            <div class="tex" style="top:52px;left:-90px">DELICIOUS · OH YEAH · TASTY · YUMMY · DELICIOUS · OH YEAH</div>
+            <div class="tex" style="top:96px">OH YEAH · TASTY · YUMMY · DELICIOUS · OH YEAH · TASTY</div>
+            <div class="ptop"><svg><use href="#mark"/></svg><b>DIDI JOLLOF</b><span>TOMORROW</span></div>
+            <div class="eyebrow">SEND BEFORE 8:00 PM</div>
+            <div class="phead disp"><span class="y">THE COOK</span><span class="c">LIST</span></div>
+          </div>
+          <div class="scroll"><div class="body">
+            <div id="orderlist"></div>
+            <div id="orderempty" hidden></div>
+            <div class="total"><span>Estimated</span><b id="est">GH₵ 0</b></div>
+            <button type="button" class="cta" id="sendcta"><span>Send to operations</span></button>
+          </div></div>
+        </section>
+
+        <!-- OPS -->
+        <section class="screen" data-s="ops" role="tabpanel" id="p-ops" aria-label="Operations">
+          <div class="poster">
+            <div class="tex" style="top:8px">TASTY · YUMMY · DELICIOUS · OH YEAH · TASTY · YUMMY · DELICIOUS</div>
+            <div class="tex" style="top:52px;left:-90px">DELICIOUS · OH YEAH · TASTY · YUMMY · DELICIOUS · OH YEAH</div>
+            <div class="tex" style="top:96px">OH YEAH · TASTY · YUMMY · DELICIOUS · OH YEAH · TASTY</div>
+            <div class="ptop"><svg><use href="#mark"/></svg><b>DIDI JOLLOF</b><span>FRI 19 SEP</span></div>
+            <div class="eyebrow">ACROSS 3 OUTLETS</div>
+            <div class="phead disp"><span class="y" id="opsnum">SIX URGENT</span><span class="c">LINES</span></div>
+          </div>
+          <div class="scroll"><div class="body">
+            <div class="tiles">
+              <div class="stat"><b id="reqtoday">12</b><span>requests today</span></div>
+              <div class="stat"><b id="spend">GH₵ 0</b><span>estimated spend</span></div>
+            </div>
+            <h2 class="sect">Priority queue</h2>
+            <div id="opslist"></div>
+            <button type="button" class="cta" id="opscta"><span id="opstxt">Order all urgent lines</span></button>
+          </div></div>
+        </section>
+
+        <!-- MORE -->
+        <section class="screen" data-s="more" role="tabpanel" id="p-more" aria-label="More">
+          <div class="poster">
+            <div class="tex" style="top:8px">TASTY · YUMMY · DELICIOUS · OH YEAH · TASTY · YUMMY · DELICIOUS</div>
+            <div class="tex" style="top:52px;left:-90px">DELICIOUS · OH YEAH · TASTY · YUMMY · DELICIOUS · OH YEAH</div>
+            <div class="ptop"><svg><use href="#mark"/></svg><b>DIDI JOLLOF</b><span>HEAD CHEF</span></div>
+            <div style="position:relative;display:flex;align-items:center;gap:14px;margin-top:12px">
+              <span class="avatar">MF</span>
+              <span style="flex:1;min-width:0">
+                <b class="disp" style="display:block;font-size:26px;color:var(--cream);line-height:.95">Mr Fred</b>
+                <span style="display:block;margin-top:3px;font-size:13px;font-weight:600;color:var(--yellow)">Osu Outlet · 3 kitchens</span>
+              </span>
+            </div>
+          </div>
+          <div class="scroll"><div class="body" style="gap:10px">
+            <button type="button" class="rowcard"><span class="meat"><span class="n">Par levels</span><span class="m">What “full” means for each dish</span></span><span class="chev">›</span></button>
+            <button type="button" class="rowcard"><span class="meat"><span class="n">Cutoff reminder</span><span class="m">7:30 PM, daily</span></span><span class="chev">›</span></button>
+            <button type="button" class="rowcard"><span class="meat"><span class="n">Outlets</span><span class="m">Osu · Airport · Kanda</span></span><span class="chev">›</span></button>
+            <button type="button" class="rowcard" id="modebtn"><span class="meat"><span class="n">Appearance</span><span class="m" id="modeval">Auto</span></span><span class="chev">›</span></button>
+            <button type="button" class="rowcard"><span class="meat"><span class="n">Help</span><span class="m">Talk to operations</span></span><span class="chev">›</span></button>
+            <button type="button" class="cta" style="background:var(--tint-crit);color:var(--crit);margin-top:6px">Sign out</button>
+          </div></div>
+        </section>
+
+        <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+        <nav class="tabbar" role="tablist" aria-label="Sections">
+          <div class="tabpill" id="tabpill"></div>
+          <button type="button" class="tab" role="tab" data-t="stock" aria-controls="p-stock" aria-selected="true">Stock</button>
+          <button type="button" class="tab" role="tab" data-t="order" aria-controls="p-order" aria-selected="false">Order</button>
+          <button type="button" class="tab" role="tab" data-t="ops"   aria-controls="p-ops"   aria-selected="false">Ops</button>
+          <button type="button" class="tab" role="tab" data-t="more"  aria-controls="p-more"  aria-selected="false">More</button>
+        </nav>
+      </div>
+      <p class="cap">Live prototype · <b>402 × 874</b> · the countdown is real — it ticks to tonight’s 8:00 PM cutoff</p>
+    </section>
+
+    <aside class="notes">
+      <h2>The brand, applied</h2>
+      <p class="lede">Everything here is sampled from their Instagram: the red, the gold, the poster type, the “best for less” voice. The only thing I changed is what had to change to make it operable.</p>
+      <p class="lede" style="margin-top:-10px">One flow, four taps: count what is left, build the order, send it. Counting and requesting are the same screen because splitting them is the step chefs skip.</p>
+
+      <h3>Palette</h3>
+      <div class="sw" id="swatches"></div>
+
+      <h3>The one correction</h3>
+      <div class="tblw"><table>
+        <thead><tr><th>pair</th><th>as posted</th><th>here</th></tr></thead>
+        <tbody>
+          <tr><td>Yellow on red</td><td class="bad">2.46:1</td><td class="good">4.41:1</td></tr>
+          <tr><td>Cream on red</td><td class="bad">3.61:1</td><td class="good">6.47:1</td></tr>
+          <tr><td>Ink on yellow</td><td class="good">11.66:1</td><td class="good">11.66:1</td></tr>
+        </tbody>
+      </table></div>
+      <ul class="list" style="margin-top:16px">
+        <li><svg><use href="#tick"/></svg><span><b>Their yellow-on-red is 2.46:1.</b> It works on Instagram because it is always poster-scale — at 13px it is unreadable. Dropping the ground one step to <code>#A82713</code> takes it to <b>4.41</b>, so the pairing survives at every size.</span></li>
+        <li><svg><use href="#tick"/></svg><span><b>Yellow became the action colour.</b> Ink on yellow is 11.66:1 — the strongest pair they own. So every primary button is yellow, and nothing else is.</span></li>
+      </ul>
+
+      <h3>What carries the brand</h3>
+      <ul class="list">
+        <li><svg><use href="#tick"/></svg><span><b>Poster headers.</b> Gabarito Black, uppercase, −4% tracking, 88% leading — the stacked display type from their grid, with the repeated <code>TASTY · YUMMY</code> texture behind it.</span></li>
+        <li><svg><use href="#tick"/></svg><span><b>The dishes are the products</b>, shot by them. Jollof, fried rice, waakye, grilled chicken — cropped straight out of the @didijollof grid, not “chicken, tomatoes, spring onions”.</span></li>
+        <li><svg><use href="#tick"/></svg><span><b>A live countdown.</b> The 8:00 PM supplier cutoff is the reason this screen exists, so it ticks.</span></li>
+        <li><svg><use href="#tick"/></svg><span><b>Stock as a bar against par</b>, not a number to decode — 8 of 40 reads instantly as nearly empty. The notch on the bar is the <b>minimum</b>; fall left of it and the tag turns <code>CRITICAL</code>.</span></li>
+        <li><svg><use href="#tick"/></svg><span><b>The chef types what is left.</b> That count is the only editable number on the stock screen — no separate stock-check step, no extra tab. Tap it and the tag, the bar and the suggested order quantity all follow, so the request is <em>derived</em> from the count rather than guessed alongside it.</span></li>
+        <li><svg><use href="#tick"/></svg><span><b>The count travels with the request.</b> Every order line reads <code>8 left of 40</code> and every ops line <code>32 portions requested · 8 left</code> — operations approves against what is actually in the kitchen, not a bare number.</span></li>
+      </ul>
+
+      <h3>Motion</h3>
+      <ul class="list">
+        <li><svg><use href="#tick"/></svg><span><b>Two springs</b>, from Apple’s damping/response model: <code>ζ 1.0 · 0.4s</code> for navigation, <code>ζ 0.8 · 0.3s</code> for the order sheet. Same values are wired into the Figma prototype.</span></li>
+        <li><svg><use href="#tick"/></svg><span><b>Feedback on pointer-down</b>, not click. Bars fill with a stagger on arrival; quantities roll in the direction they moved.</span></li>
+        <li><svg><use href="#tick"/></svg><span>All of it yields to <code>prefers-reduced-motion</code>.</span></li>
+      </ul>
+
+      <p class="foot">Built from the @didijollof grid — palette, poster type, voice and the food itself. The mark is redrawn from their posts; swap in the official SVG when there is one. Photography is theirs, cropped from the feed at 300&nbsp;px; re-export from the originals for production.</p>
+    </aside>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=(s,r)=>(r||document).querySelector(s), $$=(s,r)=>[...(r||document).querySelectorAll(s)];
+const RM=matchMedia('(prefers-reduced-motion: reduce)');
+const phone=$('#phone');
+
+const SEED=[
+  {id:'jollof', n:'Jollof rice',     on:8,  min:12, par:40,  u:'portions', price:85},
+  {id:'fried',  n:'Fried rice',      on:2,  min:4,  par:12,  u:'trays',    price:120},
+  {id:'waakye', n:'Waakye',          on:45, min:40, par:150, u:'packs',    price:9},
+  {id:'chicken',n:'Grilled chicken', on:0,  min:6,  par:20,  u:'pieces',   price:15}
+];
+const OTHER_URGENT=3, OTHER_SPEND=600, BASE_REQ=12;
+let items, sent, ordered, mode;
+/* counted: the chef has typed what is left. touched: they overrode the suggested quantity,
+   so a later recount must not wipe it. */
+function seed(){
+  items=SEED.map(o=>({...o, q:suggest(o), counted:false, touched:false}));
+  sent=false; ordered=false;
+}
+
+/* severity is derived from the count against the minimum — nothing is stored */
+const sevOf=it => it.on<=0 ? 'out' : it.on<it.min ? 'critical' : it.on<it.par ? 'low' : 'ok';
+const SEVLAB={out:'OUT',critical:'CRITICAL',low:'LOW',ok:'FULL'};
+const suggest=it => Math.max(it.par-it.on,0);
+const needed=it => sevOf(it)==='out'||sevOf(it)==='critical';
+const frac=f => Math.max(0,Math.min(f,1));
+const pct=f => (frac(f)*100).toFixed(2)+'%';
+const barw=f => {const p=frac(f)*100; return (p>0?Math.max(p,4):0)+'%';};
+
+const money=n=>'GH₵ '+n.toLocaleString('en-US');
+const live=()=>items.filter(i=>i.q>0);
+const est=()=>OTHER_SPEND+live().reduce((s,i)=>s+i.q*i.price,0);
+const urgent=()=>ordered?0:live().filter(needed).length+OTHER_URGENT;
+const WORDS=['ZERO','ONE','TWO','THREE','FOUR','FIVE','SIX','SEVEN','EIGHT','NINE','TEN'];
+const word=n=>WORDS[n]||String(n);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// Didi Jollof's own photography, cropped from their grid
+const PHOTO={
+  jollof:'data:image/jpeg;base64,__PHOTO_JOLLOF__',
+  fried:'data:image/jpeg;base64,__PHOTO_FRIED__',
+  waakye:'data:image/jpeg;base64,__PHOTO_WAAKYE__',
+  chicken:'data:image/jpeg;base64,__PHOTO_CHICKEN__'
+};
+const DISHNAME={jollof:'Jollof rice',fried:'Fried rice',waakye:'Waakye',chicken:'Grilled chicken'};
+function tile(id,size){
+  return '<span class="tile '+id+'" style="width:'+size+'px;height:'+size+'px">'+
+         '<img src="'+PHOTO[id]+'" alt="'+DISHNAME[id]+'" loading="lazy"></span>';
+}
+
+function roll(el,dir){ if(!el||RM.matches)return;
+  el.animate([{transform:'translateY('+(dir>0?7:-7)+'px)',opacity:0},{transform:'none',opacity:1}],
+             {duration:210,easing:'cubic-bezier(.22,.8,.28,1)'}); }
+function pop(el,from){ if(!el||RM.matches)return;
+  el.animate([{transform:'scale('+(from||1.25)+')'},{transform:'scale(1)'}],
+             {duration:360,easing:'cubic-bezier(.22,1.2,.36,1)'}); }
+function setN(el,v,dir){ if(!el)return; const s=String(v); if(el.textContent!==s){el.textContent=s; roll(el,dir||1);} }
+let tt;
+function toast(msg,label,fn){
+  const box=$('#toasts'); box.innerHTML='';
+  const t=document.createElement('div'); t.className='toast';
+  const s=document.createElement('span'); s.textContent=msg; t.appendChild(s);
+  if(label){const b=document.createElement('button');b.type='button';b.textContent=label;
+    b.addEventListener('click',()=>{fn&&fn();box.innerHTML='';});t.appendChild(b);}
+  box.appendChild(t);
+  if(!RM.matches) t.animate([{transform:'translateY(14px)',opacity:0},{transform:'none',opacity:1}],
+    {duration:280,easing:'cubic-bezier(.22,1.2,.36,1)'});
+  clearTimeout(tt); tt=setTimeout(()=>{ if(box.contains(t)) box.innerHTML=''; },4200);
+}
+
+/* ---- live countdown to tonight's 8:00 PM cutoff ---- */
+function tickClock(){
+  const el=$('#clock'); if(!el) return;
+  const now=new Date(); const cut=new Date(now); cut.setHours(20,0,0,0);
+  let txt;
+  if(now>=cut){ txt='cutoff passed · send now'; }
+  else{
+    const ms=cut-now, h=Math.floor(ms/3600000), m=Math.floor(ms%3600000/60000), s=Math.floor(ms%60000/1000);
+    txt=(h>0? h+'h '+String(m).padStart(2,'0')+'m ' : m+'m ')+String(s).padStart(2,'0')+'s to cutoff';
+  }
+  if(el.textContent!==txt) el.textContent=txt;
+}
+
+/* ---- navigation ---- */
+const ORDER=['stock','order','ops','more']; let cur='stock';
+function go(name){
+  if(name===cur) return;
+  const from=$('.screen[data-s="'+cur+'"]'), to=$('.screen[data-s="'+name+'"]');
+  const dir=ORDER.indexOf(name)>ORDER.indexOf(cur)?1:-1;
+  from.classList.remove('on'); to.classList.add('on');
+  const sc=$('.scroll',to); if(sc) sc.scrollTop=0;
+  if(!RM.matches) to.animate([{opacity:0,transform:'translateX('+(dir*16)+'px)'},{opacity:1,transform:'none'}],
+    {duration:320,easing:'cubic-bezier(.22,.8,.28,1)'});
+  cur=name;
+  $$('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.t===name)));
+  $('#tabpill').style.transform='translateX('+(ORDER.indexOf(name)*100)+'%)';
+  if(name==='stock'||name==='ops') fillBars();
+}
+$$('.tab').forEach(t=>t.addEventListener('click',()=>go(t.dataset.t)));
+
+/* press feedback on pointer-down, not click */
+document.addEventListener('pointerdown',e=>{const c=e.target.closest('.cta');
+  if(c&&!c.disabled)c.classList.add('press');});
+['pointerup','pointercancel','pointerleave'].forEach(ev=>
+  document.addEventListener(ev,()=>$$('.cta.press').forEach(c=>c.classList.remove('press'))));
+
+/* ---- renders ---- */
+function renderStock(){
+  const box=$('#stocklist'); box.innerHTML='';
+  items.forEach(it=>{
+    const sev=sevOf(it);
+    const d=document.createElement('div'); d.className='card'; d.dataset.id=it.id;
+    d.innerHTML=tile(it.id,62)+
+      '<span class="meat">'+
+        '<span class="row1"><span class="name">'+esc(it.n)+'</span>'+
+        '<span class="tag '+sev+'">'+SEVLAB[sev]+'</span></span>'+
+        '<span class="bar"><i class="'+sev+'" data-pct="'+(it.on/it.par)+'" style="width:'+barw(it.on/it.par)+'"></i>'+
+          '<span class="min" style="left:'+pct(it.min/it.par)+'"></span></span>'+
+        '<label class="left'+(it.counted?' counted':'')+'"><span class="lab">LEFT</span>'+
+          '<span class="count"><input type="number" inputmode="numeric" min="0" step="1" value="'+it.on+'"'+
+            ' aria-label="'+esc(it.n)+' — amount left in the kitchen, of '+it.par+' '+esc(it.u)+'"></span>'+
+          '<span class="of">of '+it.par+' '+esc(it.u)+'</span>'+
+          '<svg class="done" aria-hidden="true"><use href="#tick"/></svg>'+
+        '</label>'+
+      '</span>';
+    const inp=$('input',d);
+    inp.addEventListener('focus',()=>inp.select());
+    inp.addEventListener('input',()=>count(it,d,inp.value));
+    inp.addEventListener('keydown',e=>{ if(e.key==='Enter'){e.preventDefault(); inp.blur();} });
+    inp.addEventListener('blur',()=>{ if(inp.value==='') inp.value=it.on; renderAll(); });
+    box.appendChild(d);
+  });
+  headline();
+}
+/* typed while the field has focus, so the card is patched in place — re-rendering
+   the list here would take the keyboard away mid-count */
+function count(it,card,raw){
+  if(raw==='') return;
+  const v=parseInt(raw,10);
+  if(!isFinite(v)||v<0) return;
+  it.on=Math.min(v,it.par*5); it.counted=true;
+  if(!it.touched) it.q=suggest(it);
+  const sev=sevOf(it);
+  const tag=$('.tag',card); tag.className='tag '+sev; tag.textContent=SEVLAB[sev];
+  const bar=$('.bar i',card);
+  bar.className=sev; bar.dataset.pct=it.on/it.par; bar.style.width=barw(it.on/it.par);
+  $('label.left',card).classList.add('counted');
+  renderOrder(); renderOps(); totals(); headline();
+}
+function headline(){
+  const n=live().length, c=items.filter(i=>i.counted).length;
+  $('#h1a').textContent = n ? word(n)+(n===1?' THING':' THINGS') : 'NOTHING';
+  $('#counthint').textContent = c===0
+    ? 'Tap a number to enter what is left in the kitchen'
+    : c<items.length ? c+' of '+items.length+' counted · tap a number to change one'
+    : 'All '+items.length+' counted';
+  $('#buildtxt').textContent = sent ? 'Order sent to operations' : 'Build tonight’s order · '+n+(n===1?' item':' items');
+  $('#buildcta').className = sent ? 'cta pinned sent' : 'cta pinned';
+  $('#buildcta').disabled = sent || !n;
+}
+/* bars hold their real width after any render; this is the animated arrival only */
+function fillBars(){
+  $$('.bar i').forEach((el,i)=>{
+    const target=barw(+el.dataset.pct);
+    el.style.width='0%';
+    setTimeout(()=>{ el.style.width=target; }, RM.matches?0:90+i*110);
+  });
+}
+function renderOrder(){
+  const box=$('#orderlist'); box.innerHTML='';
+  const list=live();
+  list.forEach(it=>{
+    const d=document.createElement('div'); d.className='rowcard'; d.dataset.id=it.id;
+    d.innerHTML=tile(it.id,52)+
+      '<span class="meat"><span class="n">'+esc(it.n)+'</span>'+
+      '<span class="m"><span class="tag '+sevOf(it)+'" style="margin-right:6px">'+SEVLAB[sevOf(it)]+'</span>'+
+      it.on+' left of '+it.par+'</span></span>'+
+      '<span class="stepper"><button type="button" data-d="-1" aria-label="One fewer '+esc(it.n)+'">−</button>'+
+      '<output aria-label="'+esc(it.n)+' quantity">'+it.q+'</output>'+
+      '<button type="button" data-d="1" aria-label="One more '+esc(it.n)+'">+</button></span>';
+    $$('[data-d]',d).forEach(b=>b.addEventListener('click',()=>{
+      const dd=+b.dataset.d, next=it.q+dd;
+      if(next<=0){
+        const keep=it.q; it.q=0; it.touched=true; d.classList.add('leaving');
+        setTimeout(()=>renderAll(), RM.matches?0:300);
+        toast(it.n+' removed','Undo',()=>{it.q=keep;renderAll();});
+        return;
+      }
+      it.q=next; it.touched=true; const o=$('output',d); o.textContent=next; roll(o,dd); totals(); headline();
+    }));
+    box.appendChild(d);
+  });
+  const em=$('#orderempty');
+  if(!list.length){ em.hidden=false;
+    em.innerHTML='<div class="empty"><b>Nothing on the list</b><span>Add what is running low from the Stock screen.</span></div>'; }
+  else em.hidden=true;
+  const s=$('#sendcta');
+  s.disabled=!list.length||sent;
+  s.className = sent?'cta sent':'cta';
+  s.innerHTML = sent
+    ? '<svg style="width:18px;height:18px;stroke:currentColor;stroke-width:2.6;fill:none;stroke-linecap:round;stroke-linejoin:round"><use href="#tick"/></svg><span>Sent · 6:42 PM</span>'
+    : '<span>Send to operations</span>';
+}
+function renderOps(){
+  const box=$('#opslist'); box.innerHTML='';
+  live().forEach(it=>{
+    const sev=sevOf(it), done=ordered&&needed(it);
+    const d=document.createElement('div'); d.className='rowcard';
+    d.innerHTML=tile(it.id,44)+
+      '<span class="meat"><span class="n">'+esc(it.n)+'</span>'+
+      '<span class="m">'+it.q+' '+it.u+' requested · '+it.on+' left</span></span>'+
+      '<span class="tag '+(done?'low':sev)+'">'+(done?'ORDERED':SEVLAB[sev])+'</span>';
+    box.appendChild(d);
+  });
+  const u=urgent();
+  $('#opsnum').textContent = u? word(u)+' URGENT' : 'ALL LINES';
+  $('#opstxt').textContent = u? 'Order all '+u+' urgent lines' : 'Everything is ordered';
+  $('#opscta').disabled = !u;
+  $('#opscta').className = u?'cta':'cta sent';
+  setN($('#reqtoday'), BASE_REQ+(sent?1:0));
+}
+function totals(){
+  setN($('#est'), money(est()));
+  setN($('#spend'), money(est()));
+}
+function renderAll(){ renderStock(); renderOrder(); renderOps(); totals(); }
+
+$('#buildcta').addEventListener('click',()=>{ if(!$('#buildcta').disabled) go('order'); });
+$('#sendcta').addEventListener('click',()=>{
+  const b=$('#sendcta'); if(b.disabled) return;
+  b.disabled=true; b.innerHTML='<span class="spin"></span><span>Sending…</span>';
+  setTimeout(()=>{ sent=true; renderAll(); toast('Order sent to operations'); },900);
+});
+$('#opscta').addEventListener('click',()=>{
+  if($('#opscta').disabled) return;
+  ordered=true; renderAll(); toast('Urgent lines sent to suppliers');
+});
+const MODES=['auto','service','late'], MLAB={auto:'Auto',service:'Service (light)',late:'Late (dark)'};
+$('#modebtn').addEventListener('click',()=>{
+  mode=MODES[(MODES.indexOf(mode)+1)%3];
+  phone.dataset.mode=mode; $('#modeval').textContent=MLAB[mode];
+  toast('Appearance · '+MLAB[mode]);
+});
+$$('[data-theme-set]').forEach(b=>b.addEventListener('click',()=>{
+  const v=b.dataset.themeSet;
+  if(v==='system') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme',v);
+  $$('[data-theme-set]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+}));
+$('#reset').addEventListener('click',()=>{
+  seed(); mode='auto'; phone.dataset.mode='auto'; $('#modeval').textContent='Auto';
+  renderAll(); go('stock'); fillBars(); toast('Prototype reset');
+});
+
+const SW=[['Poster red','#A82713'],['Brand red','#E8452B'],['Yellow','#F9C53C'],['Cream','#FFF3E2'],
+          ['Ink','#1C0F09'],['Sunken','#F6E6CE'],['Critical','#BE2F18'],['Low','#8A6106']];
+$('#swatches').innerHTML=SW.map(([n,h])=>
+  '<div class="swatch"><i style="background:'+h+'"></i><b>'+n+'</b><code>'+h+'</code></div>').join('');
+
+seed(); mode='auto'; renderAll(); fillBars();
+tickClock(); setInterval(tickClock,1000);
+requestAnimationFrame(()=>{ $$('.rise').forEach((el,i)=>setTimeout(()=>el.classList.add('in'), 80+i*110)); });
+})();
+</script>

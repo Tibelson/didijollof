@@ -1,0 +1,26 @@
+# Secrets — never commit
+.env
+.env.local
+.env.*.local
+.dev.vars
+.dev.vars.*
+
+# Neon / Cloudflare local state
+.neon
+.wrangler/
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Node
+node_modules/
+
+# Vendored by pywrangler at deploy time — a build artifact, not source.
+# api/pylock.toml IS committed, so the build stays reproducible.
+api/python_modules/
+
+# OS
+.DS_Store

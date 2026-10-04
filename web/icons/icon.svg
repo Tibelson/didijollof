@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Didi Jollof">
+  <rect width="512" height="512" rx="112" fill="#EE2C23"/>
+  <circle cx="256" cy="256" r="150" fill="#FEC41A"/>
+  <ellipse cx="183" cy="256" rx="38" ry="22" fill="#EE2C23"/>
+  <rect x="216" y="243" width="148" height="14" rx="7" fill="#EE2C23"/>
+  <rect x="298" y="214" width="66" height="11" rx="5.5" fill="#EE2C23"/>
+  <rect x="298" y="237" width="66" height="11" rx="5.5" fill="#EE2C23"/>
+  <rect x="298" y="260" width="66" height="11" rx="5.5" fill="#EE2C23"/>
+</svg>

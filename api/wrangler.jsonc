@@ -1,0 +1,64 @@
+{
+  // Didi Jollof — one Worker serves both the API and the PWA.
+  //
+  // Routing: Static Assets are tried first for anything that is not a Worker
+  // route. `run_worker_first` lists the prefixes that must always reach
+  // FastAPI, so /api/* is never shadowed by a file in web/.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "didi-jollof",
+  "main": "src/entry.py",
+
+  // Python Workers need this flag. The date pins the Pyodide build and its
+  // package versions — Hyperdrive support in Python requires 2026-09-08 or
+  // later, so do not move this backwards.
+  "compatibility_date": "2026-09-30",
+  "compatibility_flags": ["python_workers"],
+
+  "observability": { "enabled": true },
+
+  // Keep the workers.dev URL alive. Declaring `routes` silently turns this off
+  // unless it is set explicitly, which took the app offline once already.
+  "workers_dev": true,
+
+  // stock.didijollof.com is NOT configured here yet: the didijollof.com zone
+  // sits on a different Cloudflare account (the one serving Auda Foods at the
+  // apex), so this account cannot attach a route to it. Once the zone is added
+  // to this account — or the Worker is moved to that account — uncomment:
+  //
+  // "routes": [
+  //   {
+  //     "pattern": "stock.didijollof.com",
+  //     "custom_domain": true,
+  //     "zone_name": "didijollof.com"
+  //   }
+  // ],
+
+  "assets": {
+    "directory": "../web",
+    "binding": "ASSETS",
+    "html_handling": "auto-trailing-slash",
+    // Unknown paths fall back to the shell so hash routes survive a reload.
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+
+  // Pooled, warmed Postgres in front of Neon. Recreate with:
+  //   wrangler hyperdrive create didi-postgres --connection-string="$DATABASE_URL_UNPOOLED"
+  // Use Neon's DIRECT string, not the "-pooler" one: Hyperdrive pools for us,
+  // and stacking two poolers breaks prepared statements.
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "97cdce5b976f4916abc6275c65b1a2e0",
+      // Used by `wrangler dev` so local runs hit the Docker database.
+      "localConnectionString": "postgresql://didi:didi@localhost:55432/didi"
+    }
+  ],
+
+  "vars": {
+    "DIDI_ENV": "production"
+  }
+
+  // SESSION_SECRET is a secret, not a var. Set it with:
+  //   wrangler secret put SESSION_SECRET
+}

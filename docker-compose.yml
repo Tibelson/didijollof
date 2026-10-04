@@ -1,0 +1,21 @@
+# Local Postgres for development and tests. Production is Neon behind Hyperdrive.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: didi-db
+    environment:
+      POSTGRES_USER: didi
+      POSTGRES_PASSWORD: didi
+      POSTGRES_DB: didi
+    ports:
+      - "55432:5432"
+    volumes:
+      - didi-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U didi -d didi"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  didi-pgdata:

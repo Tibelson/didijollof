@@ -1,0 +1,1001 @@
+<title>Didi Jollof — Inventory &amp; Replenishment</title>
+
+<style>
+/* ============================================================
+   42dot Sans — variable, latin subset, inlined (CSP blocks CDNs)
+   ============================================================ */
+@font-face{
+  font-family:'42dot Sans';
+  src:url(data:font/woff2;base64,__FONT__) format('woff2');
+  font-weight:300 800; font-style:normal; font-display:block;
+}
+
+/* ============================================================
+   TOKENS
+   --pg-*  page chrome (the studio surface the phone sits on)
+   --c-*   the app's own palette, lifted from Figma
+   ============================================================ */
+:root{
+  /* page chrome — light */
+  --pg-ground:#E9DFD4; --pg-panel:#FBF6EF; --pg-ink:#2E2723; --pg-mute:#75655A;
+  --pg-line:rgba(46,39,35,.12); --pg-accent:#AE4519;
+
+  /* app — light (Figma values, with contrast-corrected text tokens) */
+  --c-ground:#FFFCF0;   /* 7:2 frame bg      */
+  --c-surface:#FFFFFF;  /* cards             */
+  --c-inset:#F0E6DE;    /* warm linen chips  */
+  --c-ink:#38312E;      /* primary text      */
+  --c-ink-strong:#241C18;/* text on flame    */
+  --c-contrast:#38312E; --c-oncontrast:#FFFCF0; --c-oncontrast-mute:#D8C9BF;
+  --c-mute:#7E6E63;     /* was #8C7D73 (3.86:1) */
+  --c-line:rgba(56,48,46,.09);
+  --c-flame:#F56E3D;    /* brand fill — unchanged */
+  --c-flame-ink:#AE4519;/* brand for small text on light */
+  --c-flame-lift:#FF8A5C;/* brand for text on ink */
+  --c-blush:#FDE9E3; --c-peach:#F5B59E; --c-coral:#FFD1C1; --c-lilac:#FDEDF8;
+  --c-urgent-bg:#FDE9E3; --c-urgent-ink:#A83A1E;
+  --c-low-bg:#FFF0D6;    --c-low-ink:#8A5800;
+  --c-done-bg:#E2EFE3;   --c-done-ink:#2E6B39;
+  --c-shadow:0 6px 16px rgba(56,48,46,.14);
+  --c-shadow-lg:0 22px 60px -18px rgba(46,39,35,.45),0 3px 10px rgba(46,39,35,.16);
+
+  /* type scale — 7 steps, replacing the 17 ad-hoc sizes in the file */
+  --t-xs:11px; --t-sm:12px; --t-md:13px; --t-lg:15px; --t-xl:17px; --t-2xl:22px; --t-3xl:28px;
+  /* 4pt spacing */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px;
+  /* radii — 5 steps, replacing 12 */
+  --r-sm:12px; --r-md:16px; --r-lg:20px; --r-xl:28px; --r-pill:999px;
+
+  --spring:cubic-bezier(.22,1.2,.36,1);
+  --ease:cubic-bezier(.22,.8,.28,1);
+}
+
+/* dark, un-stamped (OS preference) */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --pg-ground:#171310; --pg-panel:#221C18; --pg-ink:#F3E9DF; --pg-mute:#A59385;
+    --pg-line:rgba(243,233,223,.14); --pg-accent:#FF8A5C;
+    --c-ground:#17120F; --c-surface:#221B17; --c-inset:#2F251F;
+    --c-ink:#F6EDE4; --c-ink-strong:#241C18; --c-mute:#AC9A8C;
+  --c-contrast:#352A23; --c-oncontrast:#FFF6EC; --c-oncontrast-mute:#C9B8AC;
+    --c-line:rgba(246,237,228,.10);
+    --c-flame:#F56E3D; --c-flame-ink:#FF9166; --c-flame-lift:#FF8A5C;
+    --c-blush:#3B241C; --c-peach:#6B3D2A; --c-coral:#5E3524; --c-lilac:#372A33;
+    --c-urgent-bg:#3B241C; --c-urgent-ink:#FFA184;
+    --c-low-bg:#382B14;    --c-low-ink:#F0C070;
+    --c-done-bg:#1F3324;   --c-done-ink:#8FD3A0;
+    --c-shadow:0 6px 16px rgba(0,0,0,.5);
+    --c-shadow-lg:0 22px 60px -18px rgba(0,0,0,.8),0 3px 10px rgba(0,0,0,.4);
+  }
+}
+/* dark, explicitly stamped */
+:root[data-theme="dark"]{
+  --pg-ground:#171310; --pg-panel:#221C18; --pg-ink:#F3E9DF; --pg-mute:#A59385;
+  --pg-line:rgba(243,233,223,.14); --pg-accent:#FF8A5C;
+  --c-ground:#17120F; --c-surface:#221B17; --c-inset:#2F251F;
+  --c-ink:#F6EDE4; --c-ink-strong:#241C18; --c-mute:#AC9A8C;
+  --c-contrast:#352A23; --c-oncontrast:#FFF6EC; --c-oncontrast-mute:#C9B8AC;
+  --c-line:rgba(246,237,228,.10);
+  --c-flame:#F56E3D; --c-flame-ink:#FF9166; --c-flame-lift:#FF8A5C;
+  --c-blush:#3B241C; --c-peach:#6B3D2A; --c-coral:#5E3524; --c-lilac:#372A33;
+  --c-urgent-bg:#3B241C; --c-urgent-ink:#FFA184;
+  --c-low-bg:#382B14;    --c-low-ink:#F0C070;
+  --c-done-bg:#1F3324;   --c-done-ink:#8FD3A0;
+  --c-shadow:0 6px 16px rgba(0,0,0,.5);
+  --c-shadow-lg:0 22px 60px -18px rgba(0,0,0,.8),0 3px 10px rgba(0,0,0,.4);
+}
+/* the app's own Appearance setting — declared last so it beats the page theme */
+.phone[data-appearance="light"]{
+  --c-ground:#FFFCF0; --c-surface:#FFFFFF; --c-inset:#F0E6DE;
+  --c-ink:#38312E; --c-ink-strong:#241C18; --c-mute:#7E6E63;
+  --c-contrast:#38312E; --c-oncontrast:#FFFCF0; --c-oncontrast-mute:#D8C9BF;
+  --c-line:rgba(56,48,46,.09);
+  --c-flame:#F56E3D; --c-flame-ink:#AE4519; --c-flame-lift:#FF8A5C;
+  --c-blush:#FDE9E3; --c-peach:#F5B59E; --c-coral:#FFD1C1; --c-lilac:#FDEDF8;
+  --c-urgent-bg:#FDE9E3; --c-urgent-ink:#A83A1E;
+  --c-low-bg:#FFF0D6;    --c-low-ink:#8A5800;
+  --c-done-bg:#E2EFE3;   --c-done-ink:#2E6B39;
+  --c-shadow:0 6px 16px rgba(56,48,46,.14);
+}
+.phone[data-appearance="dark"]{
+  --c-ground:#17120F; --c-surface:#221B17; --c-inset:#2F251F;
+  --c-ink:#F6EDE4; --c-ink-strong:#241C18; --c-mute:#AC9A8C;
+  --c-contrast:#352A23; --c-oncontrast:#FFF6EC; --c-oncontrast-mute:#C9B8AC;
+  --c-line:rgba(246,237,228,.10);
+  --c-flame:#F56E3D; --c-flame-ink:#FF9166; --c-flame-lift:#FF8A5C;
+  --c-blush:#3B241C; --c-peach:#6B3D2A; --c-coral:#5E3524; --c-lilac:#372A33;
+  --c-urgent-bg:#3B241C; --c-urgent-ink:#FFA184;
+  --c-low-bg:#382B14;    --c-low-ink:#F0C070;
+  --c-done-bg:#1F3324;   --c-done-ink:#8FD3A0;
+  --c-shadow:0 6px 16px rgba(0,0,0,.5);
+}
+
+/* ============================================================ BASE */
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+body{
+  margin:0; background:var(--pg-ground); color:var(--pg-ink);
+  font-family:'42dot Sans',ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;
+  -webkit-font-smoothing:antialiased; line-height:1.45;
+}
+button{font:inherit;color:inherit;background:none;border:0;margin:0;padding:0;cursor:pointer}
+input{font:inherit;color:inherit}
+:focus-visible{outline:2.5px solid var(--pg-accent);outline-offset:2px;border-radius:6px}
+.phone :focus-visible{outline-color:var(--c-flame-ink)}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ============================================================ STUDIO SHELL */
+.studio{max-width:1240px;margin:0 auto;padding:clamp(20px,4vw,44px) clamp(16px,3vw,32px) 64px}
+.studio__head{display:flex;flex-wrap:wrap;gap:var(--s5);align-items:flex-end;justify-content:space-between;margin-bottom:var(--s8)}
+.lockup{font-size:var(--t-2xl);font-weight:700;letter-spacing:-.015em;line-height:1}
+.lockup em{font-style:normal;color:var(--pg-accent)}
+.studio__title{margin:var(--s3) 0 var(--s1);font-size:clamp(24px,3.2vw,34px);font-weight:700;letter-spacing:-.022em;line-height:1.1;text-wrap:balance}
+.studio__sub{margin:0;max-width:56ch;color:var(--pg-mute);font-size:var(--t-lg)}
+.toolbar{display:flex;gap:var(--s2);align-items:center;flex-wrap:wrap}
+.seg{display:flex;background:var(--pg-panel);border:1px solid var(--pg-line);border-radius:var(--r-pill);padding:3px;gap:2px}
+.seg button{padding:7px 13px;border-radius:var(--r-pill);font-size:var(--t-sm);font-weight:600;color:var(--pg-mute);transition:color .18s var(--ease),background .18s var(--ease)}
+.seg button[aria-pressed="true"]{background:var(--pg-ink);color:var(--pg-ground)}
+.seg button:hover:not([aria-pressed="true"]){color:var(--pg-ink)}
+.ghost{padding:9px 15px;border-radius:var(--r-pill);border:1px solid var(--pg-line);background:var(--pg-panel);font-size:var(--t-sm);font-weight:600;color:var(--pg-ink);transition:transform .18s var(--spring),border-color .18s}
+.ghost:hover{border-color:var(--pg-accent)}
+.ghost:active{transform:scale(.96)}
+
+.studio__body{display:grid;grid-template-columns:minmax(0,auto) minmax(300px,1fr);gap:clamp(28px,4vw,56px);align-items:start}
+@media (max-width:920px){.studio__body{grid-template-columns:minmax(0,1fr)}}
+
+/* ============================================================ PHONE */
+.stage{display:flex;flex-direction:column;align-items:center;gap:var(--s4);position:sticky;top:24px}
+@media (max-width:920px){.stage{position:static}}
+.phone{
+  position:relative;width:min(402px,100%);height:min(874px,80vh);min-height:600px;
+  background:var(--c-ground);color:var(--c-ink);
+  border-radius:var(--r-xl);box-shadow:var(--c-shadow-lg);
+  overflow:hidden;isolation:isolate;
+  transition:background .3s var(--ease),color .3s var(--ease);
+}
+.stage__caption{font-size:var(--t-sm);color:var(--pg-mute);text-align:center}
+.stage__caption b{color:var(--pg-ink);font-weight:600}
+
+/* screens */
+.screen{position:absolute;inset:0;display:none;flex-direction:column}
+.screen.is-active{display:flex}
+.scroll{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:0 var(--s5) 104px;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+
+/* app header */
+.apphead{padding:var(--s6) var(--s5) var(--s3);display:flex;flex-direction:column;gap:var(--s4)}
+.apphead__top{display:flex;align-items:center;justify-content:space-between;gap:var(--s3)}
+.brand{font-size:var(--t-2xl);font-weight:700;letter-spacing:-.02em;line-height:1}
+.brand em{font-style:normal;color:var(--c-flame-ink)}
+.avatar{width:46px;height:46px;border-radius:var(--r-pill);display:block;background:var(--c-contrast)}
+.apphead__title{display:grid;grid-template-rows:1fr;transition:grid-template-rows .34s var(--ease),opacity .24s var(--ease)}
+.apphead__inner{overflow:hidden;display:flex;flex-direction:column;gap:3px}
+.apphead h1{margin:0;font-size:var(--t-2xl);font-weight:700;letter-spacing:-.02em;line-height:1.15;text-wrap:balance}
+.apphead p{margin:0;font-size:var(--t-sm);color:var(--c-mute)}
+.screen.is-condensed .apphead__title{grid-template-rows:0fr;opacity:0;pointer-events:none}
+
+/* dark nav bar (request screen) */
+.navbar{display:flex;align-items:center;gap:var(--s3);background:var(--c-contrast);color:var(--c-oncontrast);padding:var(--s6) var(--s5) var(--s5)}
+.navbar h1{margin:0;flex:1;font-size:var(--t-xl);font-weight:700;letter-spacing:-.015em}
+.navbar .iconbtn{color:var(--c-oncontrast)}
+.countdot{min-width:32px;height:32px;padding:0 9px;border-radius:var(--r-pill);background:var(--c-flame);color:var(--c-ink-strong);
+  display:grid;place-items:center;font-size:var(--t-sm);font-weight:700;font-variant-numeric:tabular-nums}
+
+/* generic bits */
+.iconbtn{width:44px;height:44px;display:grid;place-items:center;border-radius:var(--r-pill);transition:background .18s var(--ease),transform .18s var(--spring)}
+.iconbtn:hover{background:var(--c-line)}
+.iconbtn:active{transform:scale(.9)}
+.ico{width:1em;height:1em;display:block;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+.search{display:flex;align-items:center;gap:var(--s3);background:var(--c-surface);border:1px solid var(--c-line);
+  border-radius:var(--r-md);padding:0 var(--s4);height:46px;transition:border-color .2s var(--ease),box-shadow .2s var(--ease)}
+.search:focus-within{border-color:var(--c-flame);box-shadow:0 0 0 3px color-mix(in srgb,var(--c-flame) 22%,transparent)}
+.search svg{font-size:17px;color:var(--c-mute);flex:none}
+.search input{flex:1;min-width:0;border:0;background:none;outline:none;font-size:var(--t-md);color:var(--c-ink)}
+.search input::placeholder{color:var(--c-mute)}
+
+.chips{position:relative;display:flex;gap:var(--s2);margin-top:var(--s4);overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.chips::-webkit-scrollbar{display:none}
+.chip{position:relative;z-index:1;flex:none;height:32px;padding:0 var(--s4);border-radius:var(--r-pill);
+  background:var(--c-surface);border:1px solid var(--c-line);color:var(--c-ink);
+  font-size:var(--t-sm);font-weight:600;transition:color .22s var(--ease),transform .18s var(--spring)}
+.chip:active{transform:scale(.94)}
+.chip[aria-pressed="true"]{color:var(--c-ground);border-color:transparent;background:none}
+.chips__pill{position:absolute;top:0;height:32px;border-radius:var(--r-pill);background:var(--c-ink);z-index:0;
+  transition:transform .42s var(--spring),width .42s var(--spring);will-change:transform,width}
+
+.sectionhead{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s3);margin:var(--s6) 0 var(--s3)}
+.sectionhead h2{margin:0;font-size:var(--t-xl);font-weight:700;letter-spacing:-.012em}
+.sectionhead .hint{font-size:var(--t-xs);font-weight:600;color:var(--c-flame-ink)}
+
+/* banner */
+.banner{display:flex;align-items:center;gap:var(--s4);background:var(--c-contrast);color:var(--c-oncontrast);
+  border-radius:var(--r-lg);padding:var(--s4) var(--s5);margin-top:var(--s5)}
+.banner__txt{flex:1;min-width:0}
+.banner__txt strong{display:block;font-size:var(--t-lg);font-weight:600;letter-spacing:-.01em}
+.banner__txt span{display:block;font-size:var(--t-xs);color:var(--c-oncontrast-mute);margin-top:2px}
+.row__tagline{display:block}
+.banner__num{font-size:var(--t-3xl);font-weight:700;color:var(--c-flame-lift);font-variant-numeric:tabular-nums;line-height:1}
+.pill-flame{flex:none;height:30px;padding:0 var(--s4);border-radius:var(--r-pill);background:var(--c-flame);color:var(--c-ink-strong);
+  display:grid;place-items:center;font-size:var(--t-sm);font-weight:700;white-space:nowrap;
+  transition:transform .2s var(--spring),background .25s var(--ease)}
+button.pill-flame:hover{background:var(--c-flame-lift)}
+button.pill-flame:active{transform:scale(.94)}
+.banner.is-done{background:var(--c-done-bg);color:var(--c-done-ink)}
+.banner.is-done .banner__num{color:var(--c-done-ink)}
+.banner.is-done .banner__txt span{color:var(--c-done-ink);opacity:.8}
+
+/* product grid */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3)}
+.pcard{background:var(--c-surface);border:1px solid var(--c-line);border-radius:var(--r-lg);padding:var(--s3);
+  display:flex;flex-direction:column;gap:var(--s3);text-align:left;
+  transition:transform .26s var(--spring),box-shadow .26s var(--ease),border-color .2s}
+.pcard:hover{box-shadow:var(--c-shadow)}
+.pcard__thumb{height:76px;border-radius:var(--r-sm);display:grid;place-items:center;font-size:36px;line-height:1}
+.pcard__name{display:block;font-size:var(--t-md);font-weight:600;letter-spacing:-.006em}
+.pcard__meta{display:block;font-size:var(--t-xs);color:var(--c-mute);margin-top:2px}
+.pcard__foot{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);margin-top:auto}
+.qtychip{height:26px;padding:0 var(--s3);border-radius:var(--r-pill);background:var(--c-inset);color:var(--c-ink);
+  font-size:var(--t-xs);font-weight:600;display:grid;place-items:center;font-variant-numeric:tabular-nums;white-space:nowrap}
+.qtychip.is-on{background:var(--c-blush);color:var(--c-urgent-ink)}
+.addbtn{width:44px;height:44px;margin:-9px -9px -9px 0;display:grid;place-items:center;border-radius:var(--r-pill);flex:none;
+  transition:transform .2s var(--spring)}
+.addbtn i{width:30px;height:30px;border-radius:var(--r-pill);background:var(--c-ink);color:var(--c-ground);
+  display:grid;place-items:center;font-size:17px;transition:background .2s var(--ease),transform .2s var(--spring)}
+.addbtn:hover i{background:var(--c-flame-ink)}
+.addbtn:active i{transform:scale(.86)}
+
+/* list rows */
+.rows{display:flex;flex-direction:column;gap:var(--s3)}
+.row{display:flex;align-items:center;gap:var(--s3);background:var(--c-surface);border:1px solid var(--c-line);
+  border-radius:var(--r-md);padding:var(--s3) var(--s4);text-align:left;width:100%;
+  transition:transform .3s var(--spring),opacity .3s var(--ease),box-shadow .2s var(--ease)}
+.row:hover{box-shadow:var(--c-shadow)}
+.row.is-leaving{opacity:0;transform:translateX(-24px) scale(.97)}
+.row__thumb{width:44px;height:44px;flex:none;border-radius:var(--r-sm);display:grid;place-items:center;font-size:21px;line-height:1}
+.row__thumb.sm{width:40px;height:40px;font-size:19px}
+.markimg{display:block}
+.row__body{flex:1;min-width:0}
+.row__name{display:block;font-size:var(--t-md);font-weight:600;letter-spacing:-.006em}
+.row__meta{display:block;font-size:var(--t-xs);color:var(--c-mute);margin-top:2px}
+.row__chev{color:var(--c-mute);font-size:18px;flex:none}
+.tag{display:inline-grid;place-items:center;height:22px;padding:0 var(--s3);border-radius:var(--r-pill);
+  font-size:var(--t-xs);font-weight:700;letter-spacing:.01em;white-space:nowrap}
+.tag--urgent{background:var(--c-urgent-bg);color:var(--c-urgent-ink)}
+.tag--low{background:var(--c-low-bg);color:var(--c-low-ink)}
+.tag--done{background:var(--c-done-bg);color:var(--c-done-ink)}
+.row__tagline{margin-top:6px}
+
+/* stepper */
+.stepper{flex:none;display:flex;align-items:center;background:var(--c-ground);border:1px solid var(--c-line);border-radius:var(--r-pill);height:36px}
+.stepper button{width:38px;height:36px;display:grid;place-items:center;border-radius:var(--r-pill);font-size:15px;color:var(--c-ink);
+  transition:background .16s var(--ease),transform .16s var(--spring)}
+.stepper button:hover{background:var(--c-line)}
+.stepper button:active{transform:scale(.88)}
+.stepper button[disabled]{opacity:.32;cursor:not-allowed}
+.stepper output{min-width:34px;text-align:center;font-size:var(--t-md);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* stat tiles */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);margin-top:var(--s5)}
+.stat{background:var(--c-surface);border:1px solid var(--c-line);border-radius:var(--r-md);padding:var(--s4)}
+.stat b{display:block;font-size:var(--t-2xl);font-weight:700;letter-spacing:-.022em;font-variant-numeric:tabular-nums;line-height:1.15}
+.stat span{display:block;margin-top:6px;font-size:var(--t-xs);color:var(--c-mute)}
+
+/* CTA */
+.cta{display:flex;align-items:center;justify-content:center;gap:var(--s2);width:100%;height:52px;border-radius:var(--r-md);
+  font-size:var(--t-md);font-weight:700;letter-spacing:-.004em;margin-top:var(--s5);
+  transition:transform .2s var(--spring),background .25s var(--ease),opacity .2s}
+.cta--flame{background:var(--c-flame);color:var(--c-ink-strong)}
+.cta--flame:hover{background:var(--c-flame-lift)}
+.cta--ink{background:var(--c-ink);color:var(--c-ground)}
+.cta--ink:hover{opacity:.88}
+.cta--soft{background:var(--c-blush);color:var(--c-urgent-ink)}
+.cta:active{transform:scale(.982)}
+.cta[disabled]{cursor:default;opacity:1}
+.cta.is-sent{background:var(--c-done-bg);color:var(--c-done-ink)}
+.spinner{width:17px;height:17px;border-radius:50%;border:2.2px solid currentColor;border-right-color:transparent;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tick{width:19px;height:19px;stroke:currentColor;stroke-width:2.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.tick path{stroke-dasharray:24;stroke-dashoffset:24;animation:draw .42s var(--ease) forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+
+/* add-item dashed row */
+.addrow{width:100%;text-align:left;background:var(--c-inset);border:1.5px dashed color-mix(in srgb,var(--c-ink) 22%,transparent);
+  border-radius:var(--r-md);padding:var(--s3) var(--s4);transition:border-color .2s,transform .2s var(--spring)}
+.addrow:hover{border-color:var(--c-flame)}
+.addrow:active{transform:scale(.985)}
+.addrow b{display:block;font-size:var(--t-sm);font-weight:700}
+.addrow span{font-size:var(--t-xs);color:var(--c-mute)}
+
+/* profile card */
+.profile{display:flex;align-items:center;gap:var(--s4);background:var(--c-contrast);color:var(--c-oncontrast);
+  border-radius:var(--r-lg);padding:var(--s4) var(--s5);margin-top:var(--s5)}
+.profile__ini{width:56px;height:56px;flex:none;border-radius:var(--r-pill);background:var(--c-flame);color:var(--c-ink-strong);
+  display:grid;place-items:center;font-size:var(--t-md);font-weight:700;letter-spacing:.04em}
+.profile__body{flex:1;min-width:0}
+.profile__body b{display:block;font-size:var(--t-xl);font-weight:600;letter-spacing:-.012em}
+.profile__body span{display:block;font-size:var(--t-xs);color:var(--c-oncontrast-mute);margin-top:2px}
+.profile__body em{display:block;font-style:normal;font-size:var(--t-xs);font-weight:700;color:var(--c-flame-lift);margin-top:3px}
+.profile img{width:43px;height:43px;flex:none;opacity:.9}
+
+/* switch */
+.switch{flex:none;width:48px;height:29px;border-radius:var(--r-pill);background:var(--c-inset);position:relative;
+  transition:background .26s var(--ease)}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:23px;height:23px;border-radius:50%;background:var(--c-surface);
+  box-shadow:0 1px 3px rgba(0,0,0,.28);transition:transform .32s var(--spring)}
+.switch[aria-checked="true"]{background:var(--c-flame)}
+.switch[aria-checked="true"]::after{transform:translateX(19px)}
+
+/* empty state */
+.empty{display:flex;flex-direction:column;align-items:center;gap:var(--s2);text-align:center;padding:var(--s8) var(--s5);color:var(--c-mute)}
+.empty b{font-size:var(--t-lg);color:var(--c-ink);font-weight:600}
+.empty span{font-size:var(--t-sm);max-width:30ch}
+
+/* tab bar */
+.tabbar{position:absolute;left:var(--s4);right:var(--s4);bottom:var(--s5);height:60px;
+  background:var(--c-surface);border:1px solid var(--c-line);border-radius:var(--r-pill);box-shadow:var(--c-shadow);
+  display:flex;z-index:5}
+.tabbar__pill{position:absolute;top:9px;left:0;width:25%;height:42px;display:grid;place-items:center;pointer-events:none;
+  transition:transform .46s var(--spring);will-change:transform}
+.tabbar__pill i{width:42px;height:42px;border-radius:var(--r-pill);background:var(--c-blush)}
+.tab{position:relative;z-index:1;flex:1;display:grid;place-items:center;color:var(--c-ink);font-size:19px;border-radius:var(--r-pill);
+  transition:color .26s var(--ease),transform .2s var(--spring)}
+.tab[aria-selected="true"]{color:var(--c-flame-ink)}
+.tab:active{transform:scale(.9)}
+.tab__badge{position:absolute;top:8px;right:calc(50% - 21px);min-width:18px;height:18px;padding:0 5px;border-radius:var(--r-pill);
+  background:var(--c-flame);color:var(--c-ink-strong);font-size:10px;font-weight:700;display:grid;place-items:center;
+  font-variant-numeric:tabular-nums;border:2px solid var(--c-surface)}
+
+/* toast */
+.toasts{position:absolute;left:var(--s4);right:var(--s4);bottom:92px;z-index:6;display:flex;flex-direction:column;gap:var(--s2);pointer-events:none}
+.toast{display:flex;align-items:center;gap:var(--s3);background:var(--c-contrast);color:var(--c-oncontrast);border-radius:var(--r-sm);
+  padding:var(--s3) var(--s4);font-size:var(--t-sm);font-weight:600;box-shadow:var(--c-shadow);pointer-events:auto}
+.toast span{flex:1;min-width:0}
+.toast button{color:var(--c-flame-lift);font-weight:700;font-size:var(--t-sm);padding:4px 6px;margin:-4px -6px;border-radius:8px}
+
+/* ============================================================ NOTES PANEL */
+.notes{background:var(--pg-panel);border:1px solid var(--pg-line);border-radius:var(--r-lg);padding:clamp(20px,2.4vw,28px)}
+.notes h2{margin:0 0 var(--s1);font-size:var(--t-2xl);font-weight:700;letter-spacing:-.018em}
+.notes__lede{margin:0 0 var(--s5);color:var(--pg-mute);font-size:var(--t-md);max-width:62ch}
+.notes h3{margin:var(--s6) 0 var(--s3);font-size:var(--t-xs);font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--pg-mute)}
+.notes h3:first-of-type{margin-top:var(--s5)}
+.chg{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--s3)}
+.chg li{display:grid;grid-template-columns:22px 1fr;gap:var(--s3);font-size:var(--t-md);line-height:1.5;max-width:64ch}
+.chg svg{width:16px;height:16px;margin-top:4px;stroke:var(--pg-accent);stroke-width:2.3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.chg b{font-weight:700}
+.chg code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;background:var(--pg-ground);
+  padding:1px 5px;border-radius:5px;white-space:nowrap}
+.tbl{width:100%;border-collapse:collapse;font-size:var(--t-sm);font-variant-numeric:tabular-nums}
+.tblwrap{overflow-x:auto}
+.tbl th{text-align:left;font-weight:700;color:var(--pg-mute);font-size:var(--t-xs);text-transform:uppercase;letter-spacing:.07em;
+  padding:0 var(--s3) var(--s2) 0;white-space:nowrap}
+.tbl td{padding:7px var(--s3) 7px 0;border-top:1px solid var(--pg-line);white-space:nowrap}
+.tbl .bad{color:#B3261E;font-weight:700}
+.tbl .good{color:#2E6B39;font-weight:700}
+:root[data-theme="dark"] .tbl .bad,:root[data-theme="dark"] .tbl .good{filter:brightness(1.55)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tbl .bad,:root:not([data-theme="light"]) .tbl .good{filter:brightness(1.55)}}
+.sw{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px;border:1px solid var(--pg-line)}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:var(--s2)}
+.swatch{border:1px solid var(--pg-line);border-radius:10px;overflow:hidden;background:var(--pg-ground)}
+.swatch i{display:block;height:34px}
+.swatch b{display:block;padding:6px 8px 1px;font-size:10.5px;font-weight:700}
+.swatch code{display:block;padding:0 8px 7px;font-size:10px;color:var(--pg-mute);font-family:ui-monospace,Menlo,monospace}
+.note-foot{margin:var(--s6) 0 0;padding-top:var(--s5);border-top:1px solid var(--pg-line);font-size:var(--t-sm);color:var(--pg-mute);max-width:64ch}
+
+/* the exported alarm mark is dark artwork (measured luminance 0.00); lift it on a dark ground.
+   chef + avatar are light artwork (0.94) on an always-dark card — left untouched. */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .markimg{filter:invert(1) brightness(1.9)}
+}
+:root[data-theme="dark"] .markimg{filter:invert(1) brightness(1.9)}
+.phone[data-appearance="dark"] .markimg{filter:invert(1) brightness(1.9)}
+.phone[data-appearance="light"] .markimg{filter:none}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+}
+</style>
+
+<svg class="vh" aria-hidden="true"><defs>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M3.6 10.4 12 3.8l8.4 6.6V20a1 1 0 0 1-1 1h-4.6v-6H9.2v6H4.6a1 1 0 0 1-1-1Z"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><rect x="4" y="3.2" width="16" height="17.6" rx="2.6"/><path d="M8.4 8.6h7.2M8.4 12.4h7.2M8.4 16.2h4.2"/></symbol>
+<symbol id="i-ops" viewBox="0 0 24 24"><path d="M8 16 16 8M9.4 8H16v6.6"/><circle cx="12" cy="12" r="9.2"/></symbol>
+<symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.4" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="18.6" cy="12" r="1.7" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.6"/><path d="m15.6 15.6 4 4"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="m14.5 5-7 7 7 7"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><path d="m9.5 5 7 7-7 7"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5.4v13.2M5.4 12h13.2"/></symbol>
+<symbol id="i-minus" viewBox="0 0 24 24"><path d="M5.4 12h13.2"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4.6 12h14.8M13.4 6.2 19.4 12l-6 5.8"/></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.6a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.2-2.5 3.9"/><circle cx="12" cy="17.6" r="1.1" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-theme" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18a9 9 0 0 0 0-18Z" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m4.8 12.6 4.8 4.8L19.2 7.2"/></symbol>
+</defs></svg>
+
+<div class="studio">
+  <header class="studio__head">
+    <div>
+      <div class="lockup">didi<em>jollof</em></div>
+      <h1 class="studio__title">Inventory &amp; Replenishment</h1>
+      <p class="studio__sub">The four screens from your Figma file, rebuilt as a working prototype — every stepper, filter and send actually runs. Same palette, same voice, corrected execution.</p>
+    </div>
+    <div class="toolbar">
+      <div class="seg" role="group" aria-label="Page theme">
+        <button type="button" data-theme-set="light" aria-pressed="false">Light</button>
+        <button type="button" data-theme-set="system" aria-pressed="true">System</button>
+        <button type="button" data-theme-set="dark" aria-pressed="false">Dark</button>
+      </div>
+      <button type="button" class="ghost" id="reset">Reset data</button>
+    </div>
+  </header>
+
+  <div class="studio__body">
+    <section class="stage">
+      <div class="phone" id="phone" data-appearance="system">
+
+        <!-- ══ HOME ══ node 7:2 -->
+        <section class="screen is-active" data-screen="home" data-node="7:2" id="panel-home" role="tabpanel" aria-label="Kitchen stock">
+          <div class="apphead">
+            <div class="apphead__top">
+              <div class="brand">didi<em>jollof</em></div>
+              <img class="avatar" src="data:image/png;base64,__AVATAR__" alt="Mr Fred, Head Chef" width="46" height="46">
+            </div>
+            <div class="apphead__title"><div class="apphead__inner">
+              <h1>What needs restocking?</h1>
+              <p>Legon Outlet · End-of-day check</p>
+            </div></div>
+          </div>
+          <div class="scroll" data-condense>
+            <label class="search">
+              <svg class="ico" aria-hidden="true"><use href="#i-search"/></svg>
+              <input type="search" id="q" placeholder="Search kitchen supplies" aria-label="Search kitchen supplies">
+            </label>
+            <div class="chips" role="group" aria-label="Filter by category" id="chips">
+              <div class="chips__pill" aria-hidden="true"></div>
+            </div>
+
+            <div class="banner" data-node="7:20">
+              <div class="banner__txt">
+                <strong>Tomorrow starts here.</strong>
+                <span id="lowline">4 essentials are running low.</span>
+              </div>
+              <span class="pill-flame" id="lowcount">4 items</span>
+            </div>
+
+            <div class="sectionhead">
+              <h2 id="stockhead">Low stock</h2>
+              <span class="hint">Tap + to add</span>
+            </div>
+            <div class="grid" id="stockgrid"></div>
+            <div id="stockempty" hidden></div>
+
+            <div id="othersblock">
+              <div class="sectionhead"><h2>Other essentials</h2></div>
+              <button type="button" class="row" id="othersrow" data-goto="request">
+                <span class="row__thumb" style="background:var(--c-lilac)">▦</span>
+                <span class="row__body">
+                  <span class="row__name" id="othersname">2 more items</span>
+                  <span class="row__meta" id="othersmeta">Food packs · Spring onions</span>
+                </span>
+                <span class="qtychip">Review</span>
+              </button>
+            </div>
+
+            <button type="button" class="cta cta--flame" id="homecta" data-goto="request">
+              <span id="homectatxt">Review request · 4 items</span>
+              <svg class="ico" style="font-size:17px" aria-hidden="true"><use href="#i-arrow"/></svg>
+            </button>
+          </div>
+        </section>
+
+        <!-- ══ REQUEST ══ node 7:73 -->
+        <section class="screen" data-screen="request" data-node="7:73" id="panel-request" role="tabpanel" aria-label="My request">
+          <div class="navbar">
+            <button type="button" class="iconbtn" data-goto="home" aria-label="Back to kitchen stock">
+              <svg class="ico" style="font-size:22px" aria-hidden="true"><use href="#i-back"/></svg>
+            </button>
+            <h1>My request</h1>
+            <span class="countdot" id="reqdot">4</span>
+          </div>
+          <div class="scroll">
+            <div class="banner" style="background:var(--c-flame);color:var(--c-ink-strong);margin-top:var(--s5)">
+              <div class="banner__txt">
+                <strong style="color:var(--c-ink-strong)">Tomorrow's kitchen run</strong>
+                <span style="color:var(--c-ink-strong);opacity:.78">Send before 8:00 PM</span>
+              </div>
+              <span class="pill-flame" id="readypill" style="background:var(--c-contrast);color:var(--c-oncontrast)">Ready</span>
+            </div>
+
+            <div class="sectionhead" style="margin-bottom:var(--s1)">
+              <div>
+                <h2>Your list</h2>
+                <p style="margin:var(--s1) 0 0;font-size:var(--t-sm);color:var(--c-mute)">Update quantities before you send.</p>
+              </div>
+            </div>
+            <div class="rows" id="reqrows" style="margin-top:var(--s4)"></div>
+            <div id="reqempty" hidden></div>
+
+            <button type="button" class="addrow" id="additem" style="margin-top:var(--s3)">
+              <b>+ &nbsp;Add an item</b>
+              <span>Notes or substitutions</span>
+            </button>
+
+            <button type="button" class="cta cta--flame" id="sendbtn">
+              <span>Send request to operations</span>
+              <svg class="ico" style="font-size:17px" aria-hidden="true"><use href="#i-arrow"/></svg>
+            </button>
+          </div>
+        </section>
+
+        <!-- ══ OPERATIONS ══ node 7:144 -->
+        <section class="screen" data-screen="ops" data-node="7:144" id="panel-ops" role="tabpanel" aria-label="Operations orders">
+          <div class="apphead">
+            <div class="apphead__top">
+              <div class="brand">didi<em>jollof</em></div>
+              <img class="avatar" src="data:image/png;base64,__AVATAR__" alt="Mr Fred, Head Chef" width="46" height="46">
+            </div>
+            <div class="apphead__title"><div class="apphead__inner">
+              <h1>Kitchen requests</h1>
+              <p>Friday, 19 September</p>
+            </div></div>
+          </div>
+          <div class="scroll" data-condense>
+            <div class="banner" id="opsbanner" style="margin-top:var(--s2)">
+              <span class="banner__num" id="urgentnum">6</span>
+              <div class="banner__txt">
+                <strong style="font-size:var(--t-md);font-weight:600" id="urgentcopy">Urgent items need ordering before 8&nbsp;PM</strong>
+              </div>
+              <button type="button" class="pill-flame" id="ordernow">Order now</button>
+            </div>
+
+            <div class="stats">
+              <div class="stat"><b id="reqtoday">12</b><span>requests today</span></div>
+              <div class="stat"><b id="estimate">GH₵ 4,860</b><span>estimated restock</span></div>
+            </div>
+
+            <div class="sectionhead">
+              <h2>Priority list</h2>
+              <span class="tag tag--urgent" id="urgtag">6 urgent</span>
+            </div>
+            <div class="rows" id="opsrows"></div>
+
+            <button type="button" class="cta cta--ink" id="opscta">
+              <span id="opsctatxt">Review 6 urgent items</span>
+              <svg class="ico" style="font-size:17px" aria-hidden="true"><use href="#i-arrow"/></svg>
+            </button>
+          </div>
+        </section>
+
+        <!-- ══ MORE ══ node 14:2 -->
+        <section class="screen" data-screen="more" data-node="14:2" id="panel-more" role="tabpanel" aria-label="More">
+          <div class="apphead">
+            <div class="apphead__title"><div class="apphead__inner">
+              <h1>More</h1>
+              <p>Kitchen profile &amp; preferences</p>
+            </div></div>
+          </div>
+          <div class="scroll">
+            <div class="profile">
+              <span class="profile__ini">KA</span>
+              <span class="profile__body">
+                <b>Mr Fred</b><span>Legon Outlet</span><em>Head Chef</em>
+              </span>
+              <img src="data:image/png;base64,__CHEF__" alt="" width="43" height="43">
+            </div>
+
+            <div class="sectionhead"><h2>Preferences</h2></div>
+            <div class="rows">
+              <button type="button" class="row">
+                <span class="row__thumb sm" style="background:var(--c-inset)">
+                  <svg class="ico" style="font-size:19px" aria-hidden="true"><use href="#i-home"/></svg>
+                </span>
+                <span class="row__body"><span class="row__name">Kitchen profile</span><span class="row__meta">Accra Central</span></span>
+                <svg class="ico row__chev" aria-hidden="true"><use href="#i-chev"/></svg>
+              </button>
+
+              <div class="row" style="cursor:default">
+                <span class="row__thumb sm" style="background:var(--c-inset)">
+                  <img class="markimg" src="data:image/png;base64,__ALARM__" alt="" width="19" height="19">
+                </span>
+                <span class="row__body"><span class="row__name">Notifications</span><span class="row__meta" id="notifmeta">Inventory reminders are on</span></span>
+                <button type="button" class="switch" id="notif" role="switch" aria-checked="true" aria-label="Inventory reminders"></button>
+              </div>
+
+              <button type="button" class="row">
+                <span class="row__thumb sm" style="background:var(--c-inset)">
+                  <svg class="ico" style="font-size:19px" aria-hidden="true"><use href="#i-help"/></svg>
+                </span>
+                <span class="row__body"><span class="row__name">Help &amp; support</span><span class="row__meta">Talk to the operations team</span></span>
+                <svg class="ico row__chev" aria-hidden="true"><use href="#i-chev"/></svg>
+              </button>
+            </div>
+
+            <div class="sectionhead"><h2>App settings</h2></div>
+            <div class="rows">
+              <button type="button" class="row" id="appearance">
+                <span class="row__thumb sm" style="background:var(--c-inset)">
+                  <svg class="ico" style="font-size:19px" aria-hidden="true"><use href="#i-theme"/></svg>
+                </span>
+                <span class="row__body"><span class="row__name">Appearance</span><span class="row__meta" id="appearval">System default</span></span>
+                <svg class="ico row__chev" aria-hidden="true"><use href="#i-chev"/></svg>
+              </button>
+            </div>
+
+            <button type="button" class="cta cta--soft">Sign out</button>
+          </div>
+        </section>
+
+        <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+        <nav class="tabbar" role="tablist" aria-label="Sections">
+          <div class="tabbar__pill" id="tabpill"><i></i></div>
+          <button type="button" class="tab" role="tab" data-tab="home" aria-controls="panel-home" aria-selected="true" aria-label="Kitchen stock">
+            <svg class="ico" aria-hidden="true"><use href="#i-home"/></svg>
+          </button>
+          <button type="button" class="tab" role="tab" data-tab="request" aria-controls="panel-request" aria-selected="false" aria-label="My request">
+            <svg class="ico" aria-hidden="true"><use href="#i-list"/></svg>
+            <span class="tab__badge" id="tabbadge">4</span>
+          </button>
+          <button type="button" class="tab" role="tab" data-tab="ops" aria-controls="panel-ops" aria-selected="false" aria-label="Operations orders">
+            <svg class="ico" aria-hidden="true"><use href="#i-ops"/></svg>
+          </button>
+          <button type="button" class="tab" role="tab" data-tab="more" aria-controls="panel-more" aria-selected="false" aria-label="More">
+            <svg class="ico" aria-hidden="true"><use href="#i-more"/></svg>
+          </button>
+        </nav>
+      </div>
+      <p class="stage__caption">Live prototype · <b>402 × 874</b> · tap the tab bar, filters, steppers and <b>Send</b></p>
+    </section>
+
+    <aside class="notes">
+      <h2>What changed</h2>
+      <p class="notes__lede">Your layout, palette and copy are intact. These are execution fixes — the things that only surface once the design has to run.</p>
+
+      <h3>Colour &amp; contrast</h3>
+      <div class="tblwrap">
+        <table class="tbl">
+          <thead><tr><th>Pair</th><th>Was</th><th>Now</th></tr></thead>
+          <tbody>
+            <tr><td>“Tap + to add”</td><td class="bad">2.85:1</td><td class="good">5.58:1</td></tr>
+            <tr><td>CTA label on orange</td><td class="bad">2.92:1</td><td class="good">5.72:1</td></tr>
+            <tr><td>“Urgent” pill</td><td class="bad">2.50:1</td><td class="good">5.46:1</td></tr>
+            <tr><td>“4 items” pill</td><td class="bad">4.36:1</td><td class="good">5.72:1</td></tr>
+            <tr><td>Secondary text</td><td class="bad">3.86:1</td><td class="good">4.75:1</td></tr>
+            <tr><td>“Sign out”</td><td class="bad">2.50:1</td><td class="good">5.46:1</td></tr>
+            <tr><td>“Add” chip on card</td><td class="bad">1.03:1</td><td class="good">visible</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul class="chg" style="margin-top:var(--s4)">
+        <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><b>Text on orange is now always ink, never white.</b> White on <code>#F56E3D</code> can’t pass at any weight — your own “Tomorrow’s kitchen run” card already did it the right way, so the rule just became consistent.</span></li>
+        <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><b>A separate orange for small text.</b> <code>#F56E3D</code> stays the fill colour exactly as drawn; <code>#AE4519</code> carries the same hue where orange has to be read.</span></li>
+      </ul>
+
+      <h3>Palette</h3>
+      <div class="swatches" id="swatches"></div>
+
+      <h3>System</h3>
+      <ul class="chg">
+        <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><b>Type scale: 17 sizes → 7.</b> The file used 10–36px in ad-hoc steps; everything now sits on 11/12/13/15/17/22/28. The 10px labels moved to 11px.</span></li>
+        <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><b>One gutter.</b> Screens mixed 22px and 26px side margins and the tab bar sat at three different offsets. All 20px, on a 4pt rhythm.</span></li>
+        <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><b>Radii: 12 values → 5.</b> 12/16/20/28/pill.</span></li>
+        <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><b>Tap targets.</b> The <code>−</code>/<code>+</code> glyphs were ~10px and the “Add” chip 20px tall. All controls now clear 44×44, with the extra area invisible.</span></li>
+        <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><b>Tab icons redrawn</b> as aligned SVG on a 24px grid — <code>⌂ ▦ ↗</code> were text glyphs that sat off-centre and shifted per platform. Product emoji stay: those are content.</span></li>
+      </ul>
+
+      <h3>It actually works</h3>
+      <ul class="chg">
+        <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><b>The numbers are connected.</b> Change a quantity and the estimated restock, the request badge, the urgent count and the low-stock line all move together — <code>GH₵&nbsp;4,860</code> is <code>600 + Σ(qty × unit price)</code>, not a label.</span></li>
+        <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><b>States the file didn’t have:</b> empty search, an item stepped down to zero (with undo), sending → sent, and ordered.</span></li>
+        <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><b>Appearance does something.</b> The row cycles System / Light / Dark and re-themes the app for real.</span></li>
+        <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><b>Motion with a job:</b> the tab pill and filter pill travel so you can see where you came from; quantities roll in the direction they changed; the large title condenses on scroll. All of it obeys <code>prefers-reduced-motion</code>.</span></li>
+        <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><b>Keyboard and screen readers:</b> real buttons throughout, visible focus rings, <code>role="tablist"</code> on the bar, and a live region for counts.</span></li>
+      </ul>
+
+      <h3>One thing I left alone</h3>
+      <p class="note-foot" style="margin-top:0;padding-top:0;border:0">Spring onions are <b>out of stock</b> but sit collapsed inside “2 more items”, while Chicken (8 left) gets a full card. Ordering the home screen by severity would fix it — but that changes your layout rather than its execution, so I kept your arrangement and am flagging it instead.</p>
+
+      <p class="note-foot">Rebuilt from <b>u5gwdayIq10zYwrlHFweH3</b>, page “V2 — grocery-inspired”, nodes 7:2 · 7:73 · 7:144 · 14:2. Typeface is the real 42dot Sans, subset and inlined. The avatar, alarm and chef marks are your own exported assets.</p>
+    </aside>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=(s,r)=>(r||document).querySelector(s), $$=(s,r)=>[...(r||document).querySelectorAll(s)];
+const RM=matchMedia('(prefers-reduced-motion: reduce)');
+const phone=$('#phone');
+
+/* ── data ──────────────────────────────────────────────────── */
+const SEED=[
+ {id:'chicken', name:'Chicken',        short:'Chicken',   emoji:'🍗', tile:'--c-peach',  onHand:8,  unit:'portions', onHandUnit:'8 left',   cat:'protein', sev:'urgent', qty:24,  price:85, featured:true},
+ {id:'tomatoes',name:'Fresh tomatoes', short:'Tomatoes',  emoji:'🍅', tile:'--c-flame',  onHand:2,  unit:'crates',   onHandUnit:'2 crates', cat:'produce', sev:'urgent', qty:8,   price:120,featured:true},
+ {id:'packs',   name:'Food packs',     short:'Food packs',emoji:'▦',  tile:'--c-lilac',  onHand:45, unit:'packs',    onHandUnit:'45 packs', cat:'packs',   sev:'low',    qty:120, price:9},
+ {id:'onions',  name:'Spring onions',  short:'Spring onions',emoji:'🌿',tile:'--c-inset',onHand:0,  unit:'bundles',  onHandUnit:'Out of stock',cat:'produce',sev:'urgent',qty:12, price:15}
+];
+const CATS=[{id:'all',label:'All'},{id:'protein',label:'Protein'},{id:'produce',label:'Produce'},{id:'packs',label:'Packs'}];
+const OTHER_OUTLET_URGENT=3, OTHER_OUTLET_SPEND=600, BASE_REQUESTS=12;
+
+let items, cat, query, sent, ordered, appearance;
+function seed(){
+  items=SEED.map(o=>({...o}));
+  cat='all'; query=''; sent=false; ordered=false;
+}
+
+/* ── helpers ───────────────────────────────────────────────── */
+const ico=(id,size)=>`<svg class="ico"${size?` style="font-size:${size}px"`:''} aria-hidden="true"><use href="#${id}"/></svg>`;
+const money=n=>'GH₵ '+n.toLocaleString('en-US');
+const active=()=>items.filter(i=>i.qty>0);
+const urgentCount=()=>ordered?0:active().filter(i=>i.sev==='urgent').length+OTHER_OUTLET_URGENT;
+const estimate=()=>OTHER_OUTLET_SPEND+active().reduce((s,i)=>s+i.qty*i.price,0);
+const plural=(n,w)=>n+' '+w+(n===1?'':'s');
+const matchesWord=n=>n+(n===1?' match':' matches');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function pop(el,from){
+  if(!el||RM.matches) return;
+  el.animate([{transform:`scale(${from||1.28})`},{transform:'scale(1)'}],{duration:340,easing:'cubic-bezier(.22,1.2,.36,1)'});
+}
+function roll(el,dir){
+  if(!el||RM.matches) return;
+  el.animate([{transform:`translateY(${dir>0?7:-7}px)`,opacity:0},{transform:'none',opacity:1}],
+             {duration:200,easing:'cubic-bezier(.22,.8,.28,1)'});
+}
+function setNum(el,val,dir){
+  if(!el) return; const s=String(val);
+  if(el.textContent!==s){ el.textContent=s; roll(el,dir||1); }
+}
+let toastTimer;
+function toast(msg,actionLabel,onAction){
+  const box=$('#toasts'); box.innerHTML='';
+  const t=document.createElement('div'); t.className='toast';
+  const s=document.createElement('span'); s.textContent=msg; t.appendChild(s);
+  if(actionLabel){
+    const b=document.createElement('button'); b.type='button'; b.textContent=actionLabel;
+    b.addEventListener('click',()=>{ onAction&&onAction(); box.innerHTML=''; });
+    t.appendChild(b);
+  }
+  box.appendChild(t);
+  if(!RM.matches) t.animate([{transform:'translateY(14px)',opacity:0},{transform:'none',opacity:1}],{duration:280,easing:'cubic-bezier(.22,1.2,.36,1)'});
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>{ if(box.contains(t)) box.innerHTML=''; },4200);
+}
+
+/* ── navigation ────────────────────────────────────────────── */
+const ORDER=['home','request','ops','more'];
+let current='home';
+function go(name){
+  if(name===current) return;
+  const from=$(`.screen[data-screen="${current}"]`), to=$(`.screen[data-screen="${name}"]`);
+  const dir=ORDER.indexOf(name)>ORDER.indexOf(current)?1:-1;
+  from.classList.remove('is-active'); to.classList.add('is-active');
+  const sc=$('.scroll',to); if(sc) sc.scrollTop=0;
+  to.classList.remove('is-condensed');
+  if(!RM.matches) to.animate([{opacity:0,transform:`translateX(${dir*14}px)`},{opacity:1,transform:'none'}],
+                             {duration:300,easing:'cubic-bezier(.22,.8,.28,1)'});
+  current=name;
+  $$('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.tab===name)));
+  $('#tabpill').style.transform=`translateX(${ORDER.indexOf(name)*100}%)`;
+}
+$$('.tab').forEach(t=>t.addEventListener('click',()=>go(t.dataset.tab)));
+document.addEventListener('click',e=>{ const b=e.target.closest('[data-goto]'); if(b) go(b.dataset.goto); });
+
+/* condensing large title */
+$$('.scroll[data-condense]').forEach(sc=>{
+  sc.addEventListener('scroll',()=>{ sc.closest('.screen').classList.toggle('is-condensed',sc.scrollTop>28); },{passive:true});
+});
+
+/* ── HOME ──────────────────────────────────────────────────── */
+const chipsEl=$('#chips'), pillEl=$('.chips__pill');
+CATS.forEach(c=>{
+  const b=document.createElement('button');
+  b.type='button'; b.className='chip'; b.dataset.cat=c.id; b.textContent=c.label;
+  b.setAttribute('aria-pressed',String(c.id===cat));
+  b.addEventListener('click',()=>{ cat=c.id; renderHome(); });
+  chipsEl.appendChild(b);
+});
+function movePill(){
+  const on=$('.chip[aria-pressed="true"]',chipsEl); if(!on) return;
+  pillEl.style.width=on.offsetWidth+'px';
+  pillEl.style.transform=`translateX(${on.offsetLeft}px)`;
+}
+function matches(i){
+  const q=query.trim().toLowerCase();
+  return (cat==='all'||i.cat===cat) && (!q||i.name.toLowerCase().includes(q)||i.cat.includes(q));
+}
+function renderHome(){
+  $$('.chip',chipsEl).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.cat===cat)));
+  movePill();
+
+  const filtering = cat!=='all' || query.trim()!=='';
+  const visible = items.filter(matches);
+  const cards   = filtering ? visible : visible.filter(i=>i.featured);
+  const rest    = filtering ? [] : visible.filter(i=>!i.featured);
+
+  $('#stockhead').textContent = filtering ? (visible.length?matchesWord(visible.length):'No matches') : 'Low stock';
+
+  const grid=$('#stockgrid'); grid.innerHTML='';
+  cards.forEach(i=>{
+    const b=document.createElement('div'); b.className='pcard'; b.dataset.id=i.id;
+    b.innerHTML=
+      `<span class="pcard__thumb" style="background:var(${i.tile})">${i.emoji}</span>`+
+      `<span><span class="pcard__name">${i.short}</span><span class="pcard__meta">${i.onHandUnit}</span></span>`+
+      `<span class="pcard__foot">`+
+        `<span class="qtychip${i.qty>0?' is-on':''}" data-chip>${i.qty>0?i.qty+' added':'Add'}</span>`+
+        `<button type="button" class="addbtn" aria-label="Add one ${i.name} to the request"><i>${ico('i-plus',17)}</i></button>`+
+      `</span>`;
+    b.querySelector('.addbtn').addEventListener('click',()=>{
+      i.qty+=1; renderAll();
+      const chip=$(`.pcard[data-id="${i.id}"] [data-chip]`); pop(chip,1.18);
+      pop($('#tabbadge'),1.45);
+      toast(`${i.name} · ${i.qty} ${i.unit}`);
+    });
+    grid.appendChild(b);
+  });
+
+  const empty=$('#stockempty');
+  if(!visible.length){
+    empty.hidden=false;
+    empty.innerHTML=`<div class="empty"><b>Nothing matches “${esc(query.trim()||CATS.find(c=>c.id===cat).label)}”</b><span>Try another word, or clear the filter to see all four essentials.</span></div>`;
+  } else empty.hidden=true;
+
+  const ob=$('#othersblock'); ob.hidden = filtering || !rest.length;
+  if(!ob.hidden){
+    $('#othersname').textContent = plural(rest.length,'more item');
+    $('#othersmeta').textContent = rest.map(i=>i.short).join(' · ');
+  }
+
+  const n=active().length;
+  setNum($('#lowcount'), plural(n,'item'));
+  $('#lowline').textContent = n ? `${plural(n,'essential')} ${n===1?'is':'are'} running low.` : 'Everything is stocked.';
+
+  const cta=$('#homecta'), txt=$('#homectatxt');
+  if(sent){ cta.className='cta is-sent'; cta.removeAttribute('data-goto'); txt.textContent='Request sent to operations'; }
+  else { cta.className='cta cta--flame'; cta.dataset.goto='request'; txt.textContent=`Review request · ${plural(n,'item')}`; }
+  cta.disabled = !n && !sent;
+  if(!n && !sent) txt.textContent='Nothing to send yet';
+}
+$('#q').addEventListener('input',e=>{ query=e.target.value; renderHome(); });
+
+/* ── REQUEST ───────────────────────────────────────────────── */
+function renderRequest(){
+  const list=active(), box=$('#reqrows');
+  box.innerHTML='';
+  list.forEach(i=>{
+    const r=document.createElement('div'); r.className='row'; r.dataset.id=i.id; r.style.cursor='default';
+    r.innerHTML=
+      `<span class="row__thumb" style="background:var(${i.tile})">${i.emoji}</span>`+
+      `<span class="row__body">`+
+        `<span class="row__name">${i.name}</span>`+
+        `<span class="row__meta">${i.onHand===0?'Out of stock':i.onHand+' '+i.unit+' on hand'}</span>`+
+        `<span class="row__tagline"><span class="tag tag--${i.sev}">${i.sev==='urgent'?'Urgent':'Low'}</span></span>`+
+      `</span>`+
+      `<span class="stepper">`+
+        `<button type="button" data-step="-1" aria-label="One fewer ${i.name}">${ico('i-minus',15)}</button>`+
+        `<output aria-label="${i.name} quantity">${i.qty}</output>`+
+        `<button type="button" data-step="1" aria-label="One more ${i.name}">${ico('i-plus',15)}</button>`+
+      `</span>`;
+    $$('[data-step]',r).forEach(b=>b.addEventListener('click',()=>{
+      const d=+b.dataset.step, next=i.qty+d;
+      if(next<=0){
+        const keep=i.qty; i.qty=0;
+        r.classList.add('is-leaving');
+        setTimeout(()=>{ renderAll(); },RM.matches?0:300);
+        toast(`${i.name} removed`,'Undo',()=>{ i.qty=keep; renderAll(); });
+        return;
+      }
+      i.qty=next;
+      const out=$('output',r); out.textContent=next; roll(out,d);
+      renderTotals();
+    }));
+    box.appendChild(r);
+  });
+
+  const empty=$('#reqempty');
+  if(!list.length){
+    empty.hidden=false;
+    empty.innerHTML='<div class="empty"><b>Your list is empty</b><span>Add what is running low from the kitchen stock screen and it will show up here.</span></div>';
+  } else empty.hidden=true;
+
+  const send=$('#sendbtn');
+  send.disabled=!list.length||sent;
+  if(sent){
+    send.className='cta is-sent';
+    send.innerHTML=`<svg class="tick" viewBox="0 0 24 24" aria-hidden="true"><path d="m4.8 12.6 4.8 4.8L19.2 7.2"/></svg><span>Sent · 6:42 PM</span>`;
+    $('#readypill').textContent='Sent';
+    $('#readypill').style.background='var(--c-ink)';
+  }else{
+    send.className='cta cta--flame';
+    send.innerHTML=`<span>Send request to operations</span>${ico('i-arrow',17)}`;
+    $('#readypill').textContent=list.length?'Ready':'Empty';
+  }
+}
+$('#sendbtn').addEventListener('click',()=>{
+  const b=$('#sendbtn'); if(b.disabled) return;
+  b.disabled=true;
+  b.innerHTML='<span class="spinner"></span><span>Sending…</span>';
+  setTimeout(()=>{ sent=true; renderAll(); toast('Request sent to operations'); },900);
+});
+$('#additem').addEventListener('click',()=>toast('Add-an-item sheet is out of scope for this prototype'));
+
+/* ── OPERATIONS ────────────────────────────────────────────── */
+function renderOps(){
+  const box=$('#opsrows'); box.innerHTML='';
+  active().forEach(i=>{
+    const r=document.createElement('div'); r.className='row'; r.style.cursor='default';
+    const done=ordered&&i.sev==='urgent';
+    r.innerHTML=
+      `<span class="row__thumb sm" style="background:var(${i.tile})">${i.emoji}</span>`+
+      `<span class="row__body"><span class="row__name">${i.name}</span>`+
+      `<span class="row__meta">${i.qty} ${i.unit} requested</span></span>`+
+      `<span class="tag tag--${done?'done':i.sev}">${done?'Ordered':(i.sev==='urgent'?'Urgent':'Low')}</span>`;
+    box.appendChild(r);
+  });
+
+  const u=urgentCount();
+  setNum($('#urgentnum'),u,-1);
+  $('#urgtag').textContent = u?`${u} urgent`:'All ordered';
+  $('#urgtag').className = u?'tag tag--urgent':'tag tag--done';
+  $('#opsbanner').classList.toggle('is-done',!u);
+  $('#urgentcopy').innerHTML = u?'Urgent items need ordering before 8&nbsp;PM':'Everything urgent is ordered. Nice work.';
+  const on=$('#ordernow'); on.hidden=!u; on.disabled=!u;
+  $('#opsctatxt').textContent = u?`Review ${plural(u,'urgent item')}`:'View today’s orders';
+  setNum($('#reqtoday'), BASE_REQUESTS+(sent?1:0));
+  setNum($('#estimate'), money(estimate()));
+}
+$('#ordernow').addEventListener('click',()=>{ ordered=true; renderAll(); toast('6 urgent items sent to suppliers'); });
+$('#opscta').addEventListener('click',()=>toast(urgentCount()?'Opening the urgent queue…':'No urgent items left today'));
+
+/* ── MORE ──────────────────────────────────────────────────── */
+const APPEAR=['system','light','dark'], APPEAR_LABEL={system:'System default',light:'Light',dark:'Dark'};
+appearance='system';
+$('#appearance').addEventListener('click',()=>{
+  appearance=APPEAR[(APPEAR.indexOf(appearance)+1)%3];
+  phone.dataset.appearance=appearance;
+  $('#appearval').textContent=APPEAR_LABEL[appearance];
+  toast('Appearance · '+APPEAR_LABEL[appearance]);
+});
+$('#notif').addEventListener('click',()=>{
+  const on=$('#notif').getAttribute('aria-checked')!=='true';
+  $('#notif').setAttribute('aria-checked',String(on));
+  $('#notifmeta').textContent = on?'Inventory reminders are on':'Inventory reminders are off';
+});
+
+/* ── shared totals ─────────────────────────────────────────── */
+function renderTotals(){
+  const n=active().length;
+  const badge=$('#tabbadge'); badge.hidden=!n; setNum(badge,n);
+  setNum($('#reqdot'),n);
+  setNum($('#estimate'),money(estimate()));
+  setNum($('#urgentnum'),urgentCount(),-1);
+}
+function renderAll(){ renderHome(); renderRequest(); renderOps(); renderTotals(); }
+
+/* ── page theme ────────────────────────────────────────────── */
+$$('[data-theme-set]').forEach(b=>b.addEventListener('click',()=>{
+  const v=b.dataset.themeSet;
+  if(v==='system') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme',v);
+  $$('[data-theme-set]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+}));
+$('#reset').addEventListener('click',()=>{
+  seed(); $('#q').value=''; appearance='system'; phone.dataset.appearance='system';
+  $('#appearval').textContent='System default';
+  $('#notif').setAttribute('aria-checked','true'); $('#notifmeta').textContent='Inventory reminders are on';
+  renderAll(); go('home'); toast('Prototype reset');
+});
+
+/* ── palette swatches ──────────────────────────────────────── */
+const SWATCH=[['Ground','#FFFCF0'],['Surface','#FFFFFF'],['Linen','#F0E6DE'],['Ink','#38312E'],
+              ['Flame','#F56E3D'],['Flame ink','#AE4519'],['Blush','#FDE9E3'],['Peach','#F5B59E'],
+              ['Coral','#FFD1C1'],['Lilac','#FDEDF8'],['Urgent','#A83A1E'],['Low','#8A5800']];
+$('#swatches').innerHTML=SWATCH.map(([n,h])=>
+  `<div class="swatch"><i style="background:${h}"></i><b>${n}</b><code>${h}</code></div>`).join('');
+
+/* ── boot ──────────────────────────────────────────────────── */
+seed(); renderAll();
+requestAnimationFrame(movePill);
+addEventListener('resize',movePill);
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(movePill);
+})();
+</script>

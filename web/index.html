@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#EE2C23">
+<meta name="description" content="Didi Jollof kitchen inventory — count what is left and send tonight's list to your manager.">
+<title>Didi Jollof — Kitchen inventory</title>
+
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Didi Stock">
+<!-- Matches the splash, so the status bar does not flash cream before paint. -->
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+<link rel="preload" href="/fonts/geist.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/jost.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/icons/mark.webp" as="image" type="image/webp">
+
+<!-- Critical splash styles, inline on purpose. app.css is render-blocking but
+     still a round trip; on slow kitchen wifi the splash would otherwise paint
+     unstyled — a white flash with a bare image — which is the exact moment it
+     exists to cover. app.css restates these for the fade-out. -->
+<style>
+  html,body{height:100%;margin:0;overflow:hidden;background:#EE2C23}
+  #splash{position:fixed;inset:0;z-index:100;background:#EE2C23;
+    display:grid;place-items:center;align-content:center;gap:1.5rem;
+    transition:opacity .42s cubic-bezier(.23,1,.32,1),visibility .42s}
+  #splash img{width:7.5rem;height:auto}
+  #splash .wordmark{font:700 1.75rem/1 'Jost',ui-sans-serif,system-ui,sans-serif;
+    letter-spacing:-.01em;color:#FEC41A}
+  #splash.gone{opacity:0;visibility:hidden}
+</style>
+
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <div id="app">
+    <p id="offline" class="offline-bar" hidden>Offline — showing the last loaded list</p>
+    <main id="view" aria-live="polite"></main>
+    <nav id="nav" class="nav" aria-label="Sections" hidden></nav>
+    <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+    <div id="scrim" class="scrim" aria-hidden="true"></div>
+    <aside id="drawer" class="drawer" aria-label="Menu"></aside>
+  </div>
+
+  <!-- In the markup rather than rendered by JS: it has to be on screen from the
+       first frame, which is the whole point of a splash. app.js removes it once
+       the session check resolves. -->
+  <div id="splash" role="status" aria-label="Loading Didi Jollof">
+    <img src="/icons/mark.webp" alt="" width="120" height="120">
+    <div class="wordmark">DiDiJOLLOF</div>
+  </div>
+
+  <noscript>
+    <p style="padding:24px;font-family:system-ui;color:#fff;background:#EE2C23">
+      Didi Jollof needs JavaScript to count stock and send requests.
+    </p>
+  </noscript>
+
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>
